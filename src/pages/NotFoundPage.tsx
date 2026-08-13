@@ -15,7 +15,7 @@ export function NotFoundPage() {
   const route = location.pathname.length > 36 ? `${location.pathname.slice(0, 36)}…` : location.pathname
   useEffect(() => {
     const previous = document.title
-    document.title = '404 — Halaman tidak ditemukan | Langgor Store'
+    document.title = 'Halaman ini tidak tersedia | Langgor Store'
     return () => { document.title = previous }
   }, [])
 
@@ -34,7 +34,7 @@ export function NotFoundPage() {
       <div className="cookie-404__content">
         <m.section className="cookie-404__copy" initial="hidden" animate="visible" variants={container}>
           <m.div variants={item} className="cookie-404__eyebrow"><SearchX /> ERROR / PAGE NOT FOUND</m.div>
-          <m.h1 variants={item}>Cookie ini tidak<br/>ada di <em>stok.</em></m.h1>
+          <m.h1 variants={item}>Halaman ini tidak<br/> <em>tersedia.</em></m.h1>
           <m.p variants={item}>Alamat yang kamu buka tidak tersedia, sudah dipindahkan, atau memang tidak pernah masuk ke katalog Langgor.</m.p>
           <m.div variants={item} className="cookie-404__route"><span>REQUESTED ROUTE</span><code>{route || '/'}</code><b>404</b></m.div>
           <m.div variants={item} className="cookie-404__actions">
