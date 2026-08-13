@@ -36,14 +36,14 @@ type StoredUser = { id:string; username:string; email:string; nickname:string; r
 type AuthedRequest = Request & { user?: StoredUser; sessionId?: string }
 
 const users: StoredUser[] = [
-  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'user', balance:248500, avatar:'RA', bio:'Player Langgor dari sudut kota.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) },
-  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga Game Gate tetap aman.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) }
+  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'user', balance:248500, avatar:'RA', bio:'Member aktif Langgor Store.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) },
+  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga validation system tetap normal.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) }
 ]
 const sessions = new Map<string,{userId:string;expiresAt:number}>()
 const hashSession = (token:string) => crypto.createHmac('sha256',config.auth.sessionSecret).update(token).digest('hex')
 const auditLogs: Array<{id:string;adminId:string;action:string;target:string;at:string;ip:string}> = []
 const orders: Array<{id:string;userId:string;productId:string;price:number;status:string;paymentMethod:string;createdAt:string}> = []
-const productPrices: Record<string,number> = { 'cookie-basic':25000,'cookie-premkum':59000,'cookie-ultra':129000 }
+const productPrices: Record<string,number> = { 'cookie-basic':6000,'cookie-premkum':12000,'cookie-ultra':25000 }
 
 app.use((req,res,next)=>{
   if (!req.cookies[config.csrf.cookieName]) res.cookie(config.csrf.cookieName,crypto.randomBytes(24).toString('hex'),{ httpOnly:false, sameSite:config.auth.cookieSameSite, secure:config.auth.cookieSecure, maxAge:config.csrf.ttlMs })

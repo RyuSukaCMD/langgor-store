@@ -49,10 +49,10 @@ export function ProductDetailPage() {
   return <div className="detail-page">
     <PublicHeader />
     <main className="container detail-main">
-      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/">Beranda</Link><ChevronRight/><Link to="/store/cookies">Cookie Game</Link><ChevronRight/><span>{product.name}</span></nav>
+      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/">Beranda</Link><ChevronRight/><Link to="/store/cookies">Cookie Store</Link><ChevronRight/><span>{product.name}</span></nav>
       <section className="detail-grid">
         <div className="gallery">
-          <div className={`detail-art detail-art--${product.accent}`}><span className="detail-art__label">LANGGOR / {product.category.toUpperCase()}</span><strong>{product.icon}</strong><div><small>GAME COOKIE</small><span>{product.name}</span></div><i className="art-ring art-ring--one"/><i className="art-ring art-ring--two"/></div>
+          <div className={`detail-art detail-art--${product.accent}`}><span className="detail-art__label">LANGGOR / {product.category.toUpperCase()}</span><strong>{product.icon}</strong><div><small>LOGIN COOKIE</small><span>{product.name}</span></div><i className="art-ring art-ring--one"/><i className="art-ring art-ring--two"/></div>
           <div className="gallery-thumbs"><button className="active"><span>{product.icon}</span></button><button><span><ShieldCheck/></span></button><button><span><PackageCheck/></span></button></div>
         </div>
         <div className="detail-info">
@@ -61,15 +61,15 @@ export function ProductDetailPage() {
           <div className="detail-rating"><span><Star/> {product.rating}</span><i/> <span>{product.sold} terjual</span><i/> <span>Listing {new Date(product.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })}</span></div>
           <p className="detail-description">{product.description}</p>
           <div className="detail-price"><small>Harga produk</small><strong>{rupiah(product.price)}</strong><span>Sudah termasuk biaya layanan</span></div>
-          <div className="seller-box"><span className="seller-avatar">LG</span><div><small>DITERBITKAN OLEH</small><strong>Langgor Game <BadgeCheck/></strong><span>Official Game Gate • server verified</span></div><a href="/#keamanan">Lihat keamanan</a></div>
+          <div className="seller-box"><span className="seller-avatar">LS</span><div><small>DISEDIAKAN OLEH</small><strong>Langgor Store <BadgeCheck/></strong><span>Official store • server verified</span></div><a href="/#keamanan">Lihat validasi</a></div>
           <div className="detail-actions"><Button onClick={start} disabled={product.status === 'sold'}><ShoppingBag/> {product.status === 'sold' ? 'Stok habis' : 'Beli sekarang'}</Button><button className={`like-btn ${liked ? 'active' : ''}`} onClick={() => setLiked(v => !v)} aria-label="Simpan produk"><Heart fill={liked ? 'currentColor' : 'none'}/></button></div>
           <div className="detail-assurance"><span><ShieldCheck/><b>Server verified</b><small>Status bukan dari frontend</small></span><span><LockKeyhole/><b>Cookie privat</b><small>Token mentah tidak ditampilkan</small></span><span><Clock3/><b>Aktivasi cepat</b><small>Rata-rata 12 detik</small></span></div>
         </div>
       </section>
 
       <section className="detail-body">
-        <article><span className="eyebrow">RINCIAN PRODUK</span><h2>Yang perlu kamu tahu.</h2><p>Cookie game diterbitkan server setelah pembayaran, kode unik, dan konfirmasi langkah kedua tervalidasi. Cookie terikat pada slot perangkat serta akan berhenti otomatis saat masa aktif berakhir.</p><div className="spec-grid">{product.specs.map((spec,i) => <span key={spec}><i>{String(i+1).padStart(2,'0')}</i><strong>{spec}</strong><Check/></span>)}</div></article>
-        <aside className="safe-panel"><Fingerprint/><span className="eyebrow">LANGGOR GAME GATE</span><h3>Dua check sebelum game on.</h3><p>Tidak ada password. Cookie game baru dibuat setelah kode unik cocok dan perangkat disetujui dari Langgor ID.</p><ul><li><Check/> Pembayaran diperiksa server</li><li><Check/> Verifikasi dua langkah</li><li><Check/> Sesi bisa dicabut kapan saja</li></ul><a href="#safety">Pelajari keamanan <ChevronRight/></a></aside>
+        <article><span className="eyebrow">RINCIAN PRODUK</span><h2>Yang perlu kamu tahu.</h2><p>Cookie dipilih dari stok aktif dan diperiksa real-time sebelum delivery. Detail sensitif hanya tersedia melalui halaman pembelian setelah pembayaran berhasil diverifikasi.</p><div className="spec-grid">{product.specs.map((spec,i) => <span key={spec}><i>{String(i+1).padStart(2,'0')}</i><strong>{spec}</strong><Check/></span>)}</div></article>
+        <aside className="safe-panel"><Fingerprint/><span className="eyebrow">LANGGOR VALIDATION</span><h3>Dicek sebelum dikirim.</h3><p>Status Cookie diperiksa real-time. Delivery tidak dibuka jika pembayaran atau pemeriksaan stok belum selesai.</p><ul><li><Check/> Pembayaran diperiksa server</li><li><Check/> Validasi Cookie real-time</li><li><Check/> Delivery tercatat</li></ul><a href="#safety">Pelajari validasi <ChevronRight/></a></aside>
       </section>
 
       <section className="related-section"><SectionHead eyebrow="MASIH SATU RAK" title="Mungkin cocok juga."/><div className="product-grid">{related.map(p => <ProductCard product={p} key={p.id}/>)}</div></section>

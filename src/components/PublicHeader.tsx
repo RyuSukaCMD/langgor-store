@@ -1,4 +1,4 @@
-import { Gamepad2, Menu, X } from 'lucide-react'
+import { Cookie, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -12,17 +12,17 @@ export function PublicHeader() {
     <div className="container public-header__inner">
       <Logo />
       <nav className={`public-nav ${open ? 'is-open' : ''}`} aria-label="Navigasi utama">
-        <NavLink to="/store/cookies" onClick={() => setOpen(false)}>Pilih Cookie</NavLink>
-        <a href="/#cara-aktif" onClick={() => setOpen(false)}>Cara aktif</a>
-        <a href="/#keamanan" onClick={() => setOpen(false)}>Keamanan</a>
+        <NavLink to="/store/cookies" onClick={() => setOpen(false)}>Beli Cookie</NavLink>
+        <a href="/#spesifikasi" onClick={() => setOpen(false)}>Spesifikasi</a>
+        <a href="/#cara-aktif" onClick={() => setOpen(false)}>Cara beli</a>
         <a href="/#faq" onClick={() => setOpen(false)}>FAQ</a>
         <div className="public-nav__mobile-actions">
           <Link className="btn btn--secondary" to="/login">Masuk</Link>
-          <Link className="btn btn--primary" to="/register">Buat ID</Link>
+          <Link className="btn btn--primary" to="/register">Buat akun</Link>
         </div>
       </nav>
       <div className="public-header__actions">
-        {user ? <Link className="btn btn--primary btn--sm" to="/dashboard"><Gamepad2/> Buka game hub</Link> : <><Link className="text-link" to="/login">Masuk</Link><Link className="btn btn--primary btn--sm" to="/register">Buat Langgor ID</Link></>}
+        {user ? <Link className="btn btn--primary btn--sm" to="/dashboard"><Cookie/> Dashboard</Link> : <><Link className="text-link" to="/login">Masuk</Link><Link className="btn btn--primary btn--sm" to="/register">Buat akun</Link></>}
         <button className="icon-btn menu-toggle" onClick={() => setOpen(v => !v)} aria-expanded={open} aria-label="Buka navigasi">{open ? <X /> : <Menu />}</button>
       </div>
     </div>

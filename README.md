@@ -1,6 +1,6 @@
 # Langgor Store
 
-Full-stack store untuk Cookie login game Langgor: Cookie Basic, Cookie Premkum, dan Cookie Ultra. Login game menggunakan kode verifikasi unik serta persetujuan dua langkah tanpa password.
+Full-stack Cookie login store dengan tiga produk: Cookie Basic, Cookie Premkum, dan Cookie Ultra. Stok diperiksa real-time sebelum delivery otomatis.
 
 ## Menjalankan
 
@@ -32,14 +32,14 @@ NODE_ENV=production npm run preview
 
 | Role | Login | Password |
 |---|---|---|
-| Player | `raka@langgor.store` | `Langgor123!` |
+| Member | `raka@langgor.store` | `Langgor123!` |
 | Admin | `admin@langgor.store` | `Langgor123!` |
 
 ## Route utama
 
 - Publik: `/`, `/store/cookies`, `/product/:id`, `/u/:username`
 - Auth: `/login`, `/register`, `/forgot-password`, `/reset-password`
-- Game Hub: `/dashboard`, `/purchases`, `/profile`
+- Dashboard: `/dashboard`, `/purchases`, `/profile`
 - Admin: `/admin`
 
 ## Struktur
@@ -49,7 +49,7 @@ src/
   components/      shared UI, navigation, cards, guards
   context/         auth and toast state
   lib/             API client and helpers
-  pages/           public, auth, Game Hub, and admin pages
+  pages/           public, auth, dashboard, and admin pages
 server/
   index.ts         Express API, auth, RBAC, CSRF, validation
   schema.sql       production PostgreSQL relational schema
