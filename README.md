@@ -6,8 +6,20 @@ Full-stack marketplace cookie dan akun digital dengan visual identity khusus Lan
 
 ```bash
 npm install
+cp .env.example .env
 npm run dev
 ```
+
+`.env` lokal sudah di-ignore oleh Git. Isi `SUPABASE_URL`, `SUPABASE_ANON_KEY`, dan `SUPABASE_SERVICE_ROLE_KEY` dari **Supabase → Project Settings → API**. Service-role key hanya boleh digunakan server dan tidak boleh diberi prefix `VITE_`.
+
+Untuk deployment multi-instance, gunakan rate limiter Redis:
+
+```env
+RATE_LIMIT_STORE=redis
+REDIS_URL=rediss://default:password@host:6379
+```
+
+Konfigurasi environment divalidasi saat server mulai. Server akan berhenti dengan pesan yang jelas bila kombinasi variabel tidak aman atau tidak lengkap.
 
 Aplikasi berjalan di `http://localhost:5173`. Build produksi:
 

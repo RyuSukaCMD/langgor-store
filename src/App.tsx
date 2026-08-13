@@ -1,19 +1,28 @@
+import { lazy, Suspense } from 'react'
+import { LoaderCircle } from 'lucide-react'
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { AdminRoute, ProtectedRoute } from './components/RouteGuards'
-import { AdminPage } from './pages/AdminPage'
-import { AuthPage } from './pages/AuthPages'
-import { DashboardPage } from './pages/DashboardPage'
-import { LandingPage } from './pages/LandingPage'
-import { NotFoundPage } from './pages/NotFoundPage'
-import { ProductDetailPage } from './pages/ProductDetailPage'
-import { ProfilePage, PublicProfilePage } from './pages/ProfilePages'
-import { PurchasesPage } from './pages/PurchasesPage'
-import { NewListingPage, SellerPage } from './pages/SellerPages'
-import { StorePage } from './pages/StorePage'
+
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })))
+const AuthPage = lazy(() => import('./pages/AuthPages').then(m => ({ default: m.AuthPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })))
+const ProfilePage = lazy(() => import('./pages/ProfilePages').then(m => ({ default: m.ProfilePage })))
+const PublicProfilePage = lazy(() => import('./pages/ProfilePages').then(m => ({ default: m.PublicProfilePage })))
+const PurchasesPage = lazy(() => import('./pages/PurchasesPage').then(m => ({ default: m.PurchasesPage })))
+const SellerPage = lazy(() => import('./pages/SellerPages').then(m => ({ default: m.SellerPage })))
+const NewListingPage = lazy(() => import('./pages/SellerPages').then(m => ({ default: m.NewListingPage })))
+const StorePage = lazy(() => import('./pages/StorePage').then(m => ({ default: m.StorePage })))
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })))
+
+function RouteFallback() {
+  return <div className="route-loader"><LoaderCircle className="spin" /><span>Menyiapkan Langgor…</span></div>
+}
 
 export default function App() {
-  return <Routes>
+  return <Suspense fallback={<RouteFallback />}><Routes>
     <Route path="/" element={<LandingPage />} />
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
@@ -34,5 +43,5 @@ export default function App() {
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />
-  </Routes>
+  </Routes></Suspense>
 }

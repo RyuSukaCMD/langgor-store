@@ -10,17 +10,21 @@
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
     "@vitejs/plugin-react": "latest",
     "bcryptjs": "latest",
     "compression": "latest",
     "cookie-parser": "latest",
+    "dotenv": "^17.4.2",
     "express": "latest",
     "express-rate-limit": "latest",
     "helmet": "latest",
     "lucide-react": "latest",
+    "rate-limit-redis": "^6.0.1",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
+    "redis": "^6.2.1",
     "tsx": "latest",
     "vite": "latest",
     "zod": "latest"
