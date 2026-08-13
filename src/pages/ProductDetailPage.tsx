@@ -49,10 +49,10 @@ export function ProductDetailPage() {
   return <div className="detail-page">
     <PublicHeader />
     <main className="container detail-main">
-      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/">Beranda</Link><ChevronRight/><Link to={product.kind === 'cookie' ? '/store/cookies' : '/store/accounts'}>{product.kind === 'cookie' ? 'Cookie Store' : 'Account Market'}</Link><ChevronRight/><span>{product.name}</span></nav>
+      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/">Beranda</Link><ChevronRight/><Link to="/store/cookies">Cookie Game</Link><ChevronRight/><span>{product.name}</span></nav>
       <section className="detail-grid">
         <div className="gallery">
-          <div className={`detail-art detail-art--${product.accent}`}><span className="detail-art__label">LANGGOR / {product.category.toUpperCase()}</span><strong>{product.icon}</strong><div><small>{product.kind === 'cookie' ? 'COOKIE DROP' : 'USER LISTING'}</small><span>{product.name}</span></div><i className="art-ring art-ring--one"/><i className="art-ring art-ring--two"/></div>
+          <div className={`detail-art detail-art--${product.accent}`}><span className="detail-art__label">LANGGOR / {product.category.toUpperCase()}</span><strong>{product.icon}</strong><div><small>GAME COOKIE</small><span>{product.name}</span></div><i className="art-ring art-ring--one"/><i className="art-ring art-ring--two"/></div>
           <div className="gallery-thumbs"><button className="active"><span>{product.icon}</span></button><button><span><ShieldCheck/></span></button><button><span><PackageCheck/></span></button></div>
         </div>
         <div className="detail-info">
@@ -61,15 +61,15 @@ export function ProductDetailPage() {
           <div className="detail-rating"><span><Star/> {product.rating}</span><i/> <span>{product.sold} terjual</span><i/> <span>Listing {new Date(product.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })}</span></div>
           <p className="detail-description">{product.description}</p>
           <div className="detail-price"><small>Harga produk</small><strong>{rupiah(product.price)}</strong><span>Sudah termasuk biaya layanan</span></div>
-          <div className="seller-box"><span className="seller-avatar">{product.seller.name.slice(0,2).toUpperCase()}</span><div><small>DIJUAL OLEH</small><strong>{product.seller.name} {product.seller.verified && <BadgeCheck/>}</strong><span>@{product.seller.username} • {product.seller.rating} rating</span></div><Link to={`/u/${product.seller.username}`}>Lihat profil</Link></div>
+          <div className="seller-box"><span className="seller-avatar">LG</span><div><small>DITERBITKAN OLEH</small><strong>Langgor Game <BadgeCheck/></strong><span>Official Game Gate • server verified</span></div><a href="/#keamanan">Lihat keamanan</a></div>
           <div className="detail-actions"><Button onClick={start} disabled={product.status === 'sold'}><ShoppingBag/> {product.status === 'sold' ? 'Stok habis' : 'Beli sekarang'}</Button><button className={`like-btn ${liked ? 'active' : ''}`} onClick={() => setLiked(v => !v)} aria-label="Simpan produk"><Heart fill={liked ? 'currentColor' : 'none'}/></button></div>
-          <div className="detail-assurance"><span><ShieldCheck/><b>Transaksi tercatat</b><small>Status divalidasi server</small></span><span><LockKeyhole/><b>Delivery privat</b><small>Hanya setelah pembayaran</small></span><span><Clock3/><b>Respons seller</b><small>Rata-rata 12 menit</small></span></div>
+          <div className="detail-assurance"><span><ShieldCheck/><b>Server verified</b><small>Status bukan dari frontend</small></span><span><LockKeyhole/><b>Cookie privat</b><small>Token mentah tidak ditampilkan</small></span><span><Clock3/><b>Aktivasi cepat</b><small>Rata-rata 12 detik</small></span></div>
         </div>
       </section>
 
       <section className="detail-body">
-        <article><span className="eyebrow">RINCIAN PRODUK</span><h2>Yang perlu kamu tahu.</h2><p>{product.kind === 'cookie' ? 'Produk ini dikirim melalui delivery privat di dashboard. Pastikan browser dan perangkat sesuai dengan spesifikasi sebelum membeli. Jangan membagikan data delivery kepada orang lain.' : 'Listing ini hanya menampilkan atribut non-sensitif untuk membantu evaluasi. Proses perpindahan kepemilikan didampingi seller setelah pembayaran tervalidasi.'}</p><div className="spec-grid">{product.specs.map((spec,i) => <span key={spec}><i>{String(i+1).padStart(2,'0')}</i><strong>{spec}</strong><Check/></span>)}</div></article>
-        <aside className="safe-panel"><Fingerprint/><span className="eyebrow">LANGGOR SAFE DELIVERY</span><h3>Hal publik berhenti di sini.</h3><p>Credential, cookie, recovery code, dan instruksi sensitif tidak pernah tampil di halaman produk.</p><ul><li><Check/> Pembayaran diperiksa server</li><li><Check/> Akses hanya untuk pembeli</li><li><Check/> Jejak delivery tersimpan</li></ul><a href="#safety">Pelajari keamanan <ChevronRight/></a></aside>
+        <article><span className="eyebrow">RINCIAN PRODUK</span><h2>Yang perlu kamu tahu.</h2><p>Cookie game diterbitkan server setelah pembayaran, kode unik, dan konfirmasi langkah kedua tervalidasi. Cookie terikat pada slot perangkat serta akan berhenti otomatis saat masa aktif berakhir.</p><div className="spec-grid">{product.specs.map((spec,i) => <span key={spec}><i>{String(i+1).padStart(2,'0')}</i><strong>{spec}</strong><Check/></span>)}</div></article>
+        <aside className="safe-panel"><Fingerprint/><span className="eyebrow">LANGGOR GAME GATE</span><h3>Dua check sebelum game on.</h3><p>Tidak ada password. Cookie game baru dibuat setelah kode unik cocok dan perangkat disetujui dari Langgor ID.</p><ul><li><Check/> Pembayaran diperiksa server</li><li><Check/> Verifikasi dua langkah</li><li><Check/> Sesi bisa dicabut kapan saja</li></ul><a href="#safety">Pelajari keamanan <ChevronRight/></a></aside>
       </section>
 
       <section className="related-section"><SectionHead eyebrow="MASIH SATU RAK" title="Mungkin cocok juga."/><div className="product-grid">{related.map(p => <ProductCard product={p} key={p.id}/>)}</div></section>

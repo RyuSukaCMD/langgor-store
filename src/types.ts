@@ -24,7 +24,7 @@ export interface User {
   username: string
   email: string
   nickname: string
-  role: 'user' | 'seller' | 'admin'
+  role: 'user' | 'admin'
   balance: number
   avatar: string
   bio: string

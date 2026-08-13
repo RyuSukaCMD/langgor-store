@@ -30,21 +30,20 @@ app.use(express.json({ limit: '256kb' }))
 app.use(cookieParser())
 app.use('/api', limiters.api)
 
-const safeUser = (user: StoredUser) => ({ id:user.id, username:user.username, email:user.email, nickname:user.nickname, role:user.role, balance:user.balance, avatar:user.avatar, bio:user.bio, joinedAt:user.joinedAt, accent:user.accent, seller:user.role==='seller'||user.role==='admin' })
-type Role = 'user'|'seller'|'admin'
+const safeUser = (user: StoredUser) => ({ id:user.id, username:user.username, email:user.email, nickname:user.nickname, role:user.role, balance:user.balance, avatar:user.avatar, bio:user.bio, joinedAt:user.joinedAt, accent:user.accent, seller:false })
+type Role = 'user'|'admin'
 type StoredUser = { id:string; username:string; email:string; nickname:string; role:Role; balance:number; avatar:string; bio:string; joinedAt:string; accent:string; passwordHash:string; suspended?:boolean }
 type AuthedRequest = Request & { user?: StoredUser; sessionId?: string }
 
 const users: StoredUser[] = [
-  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'seller', balance:248500, avatar:'RA', bio:'Suka produk digital yang ringkas dan kerja dari sudut kota.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:bcrypt.hashSync('Langgor123!',10) },
-  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga Langgor tetap aman.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:bcrypt.hashSync('Langgor123!',10) }
+  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'user', balance:248500, avatar:'RA', bio:'Player Langgor dari sudut kota.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) },
+  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga Game Gate tetap aman.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) }
 ]
 const sessions = new Map<string,{userId:string;expiresAt:number}>()
 const hashSession = (token:string) => crypto.createHmac('sha256',config.auth.sessionSecret).update(token).digest('hex')
 const auditLogs: Array<{id:string;adminId:string;action:string;target:string;at:string;ip:string}> = []
 const orders: Array<{id:string;userId:string;productId:string;price:number;status:string;paymentMethod:string;createdAt:string}> = []
-const productPrices: Record<string,number> = { 'cookie-stream-plus':29000,'cookie-design-pro':19000,'cookie-music-wave':14000,'cookie-vpn-guard':35000,'account-game-valor-87':1250000,'account-creator-42k':3750000,'account-dev-tools':685000,'account-game-farm':420000 }
-const sellerOwnership = new Map<string,string>(Object.keys(productPrices).map(id=>[id,'u-raka']))
+const productPrices: Record<string,number> = { 'cookie-basic':25000,'cookie-premkum':59000,'cookie-ultra':129000 }
 
 app.use((req,res,next)=>{
   if (!req.cookies[config.csrf.cookieName]) res.cookie(config.csrf.cookieName,crypto.randomBytes(24).toString('hex'),{ httpOnly:false, sameSite:config.auth.cookieSameSite, secure:config.auth.cookieSecure, maxAge:config.csrf.ttlMs })
@@ -70,7 +69,6 @@ function attachUser(req: AuthedRequest,_res:Response,next:NextFunction){
 app.use(attachUser)
 
 function requireAuth(req:AuthedRequest,res:Response,next:NextFunction){if(!req.user)return res.status(401).json({message:'Silakan masuk untuk melanjutkan.'});if(req.user.suspended)return res.status(403).json({message:'Akun sedang ditangguhkan.'});next()}
-function requireSeller(req:AuthedRequest,res:Response,next:NextFunction){requireAuth(req,res,()=>{if(!req.user||!['seller','admin'].includes(req.user.role))return res.status(403).json({message:'Fitur ini hanya untuk seller.'});next()})}
 function requireAdmin(req:AuthedRequest,res:Response,next:NextFunction){requireAuth(req,res,()=>{if(req.user?.role!=='admin')return res.status(403).json({message:'Akses admin diperlukan.'});next()})}
 const parse = <T>(schema:z.ZodType<T>,body:unknown,res:Response):T|null=>{const result=schema.safeParse(body);if(!result.success){res.status(422).json({message:result.error.issues[0]?.message||'Data tidak valid.'});return null}return result.data}
 
@@ -78,7 +76,7 @@ const loginSchema=z.object({identifier:z.string().min(3).max(100),password:z.str
 const registerSchema=z.object({username:z.string().regex(/^[a-z0-9_]{4,20}$/,'Username tidak valid.'),email:z.string().email('Email tidak valid.').max(120),password:z.string().min(8,'Password minimal 8 karakter.').max(128)})
 
 app.get('/api/health',(_req,res)=>res.json({ok:true,time:new Date().toISOString(),environment:config.env,services:{supabase:isSupabaseConfigured?'configured':'not-configured',rateLimit:config.rateLimit.store}}))
-app.get('/api/auth/me',(req:AuthedRequest,res)=>{if(!req.user)return res.status(401).json({message:'Belum masuk.'});res.json({user:safeUser(req.user)})})
+app.get('/api/auth/me',(req:AuthedRequest,res)=>res.json({user:req.user?safeUser(req.user):null}))
 app.post('/api/auth/login',limiters.auth,async(req:AuthedRequest,res)=>{
   const body=parse(loginSchema,req.body,res);if(!body)return
   const user=users.find(u=>u.email.toLowerCase()===body.identifier.toLowerCase()||u.username.toLowerCase()===body.identifier.toLowerCase())
@@ -130,10 +128,6 @@ app.post('/api/orders',requireAuth,(req:AuthedRequest,res)=>{
   if(body.paymentMethod==='balance')req.user.balance-=price
   orders.push(order);res.status(201).json({orderId:order.id,status:order.status,amount:order.price})
 })
-
-const listingSchema=z.object({kind:z.enum(['cookie','account']),name:z.string().min(6).max(80),category:z.string().min(2).max(40),description:z.string().min(30).max(400),price:z.number().int().min(1000).max(100000000),stock:z.number().int().min(1).max(999),specs:z.array(z.string().min(2).max(80)).min(1).max(12)})
-app.post('/api/seller/listings',requireSeller,(req:AuthedRequest,res)=>{const body=parse(listingSchema,req.body,res);if(!body||!req.user)return;const id=crypto.randomUUID();sellerOwnership.set(id,req.user.id);res.status(201).json({id,status:'pending',...body})})
-app.delete('/api/seller/listings/:id',requireSeller,(req:AuthedRequest,res)=>{const id=String(req.params.id);const owner=sellerOwnership.get(id);if(!owner)return res.status(404).json({message:'Listing tidak ditemukan.'});if(owner!==req.user?.id&&req.user?.role!=='admin')return res.status(403).json({message:'Kamu hanya dapat mengubah listing milikmu.'});sellerOwnership.delete(id);res.json({ok:true})})
 
 app.post('/api/admin/action',requireAdmin,(req:AuthedRequest,res)=>{
   const schema=z.object({type:z.enum(['suspend','restore','approve','reject']),id:z.string().min(1).max(100),label:z.string().max(100)});const body=parse(schema,req.body,res);if(!body||!req.user)return

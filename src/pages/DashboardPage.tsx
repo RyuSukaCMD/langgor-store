@@ -1,4 +1,5 @@
-import { ArrowRight, ArrowUpRight, Check, Clock3, Cookie, CreditCard, PackageCheck, Pencil, Plus, ShoppingBag, Sparkles, UserRound, WalletCards } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { ArrowRight, Check, Cookie, Fingerprint, Gamepad2, KeyRound, Laptop, LogOut, MonitorSmartphone, Plus, ShieldCheck, Smartphone, TimerReset, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
@@ -7,47 +8,31 @@ import { timeGreeting } from '../lib/format'
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const reduceMotion = useReducedMotion()
   if (!user) return null
-  return <div className="dashboard-page page-enter">
-    <section className="dash-welcome">
-      <div><span className="eyebrow"><i /> KAMIS, 13 AGUSTUS</span><h1>{timeGreeting()}, {user.nickname.split(' ')[0]} <span>✦</span></h1><p>Ada satu pesanan yang sedang diproses. Selebihnya aman.</p></div>
-      <Link className="btn btn--primary" to="/store/cookies"><ShoppingBag /> Jelajahi store</Link>
+  return <div className="dashboard-page game-dashboard page-enter">
+    <motion.section className="dash-welcome" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}><div><span className="eyebrow"><i /> GAME GATE ONLINE</span><h1>{timeGreeting()}, {user.nickname.split(' ')[0]} <span>✦</span></h1><p>Cookie Premkum aktif. Tidak ada request perangkat yang menunggu.</p></div><Link className="btn btn--primary" to="/store/cookies"><Plus/> Tambah Cookie</Link></motion.section>
+
+    <section className="game-hub-grid">
+      <motion.article className="active-cookie-card" initial={{opacity:0,x:-18}} animate={{opacity:1,x:0}} transition={{delay:.08}}>
+        <div className="active-cookie-card__grid"/><div className="active-cookie-card__top"><span><i/><b>ACTIVE COOKIE</b></span><em>2-STEP VERIFIED</em></div>
+        <div className="active-cookie-card__main"><motion.span className="active-cookie-glyph" animate={reduceMotion?{}:{rotateY:[0,360]}} transition={{duration:8,repeat:Infinity,ease:'linear'}}>P</motion.span><div><small>COOKIE PREMKUM</small><strong>27 hari tersisa</strong><p>Berakhir 9 Sep 2026 • 23:59 WIB</p></div></div>
+        <div className="active-cookie-card__progress"><motion.i initial={{scaleX:0}} animate={{scaleX:.9}} transition={{delay:.4,duration:.8}}/><span>90% masa aktif</span></div>
+        <div className="active-cookie-card__foot"><span><MonitorSmartphone/> 2 / 2 device</span><span><Fingerprint/> Verified</span><button>Kelola <ArrowRight/></button></div>
+      </motion.article>
+      <motion.div className="hub-mini-stats" initial="hidden" animate="visible" variants={{hidden:{},visible:{transition:{staggerChildren:.07}}}}>
+        {[['DEVICE AKTIF','2',Laptop,'violet'],['VERIFIKASI TERAKHIR','6m',Fingerprint,'cyan'],['SESI AMAN','18',ShieldCheck,'pink']].map(([label,value,Icon,tone])=><motion.article key={String(label)} variants={{hidden:{opacity:0,y:12},visible:{opacity:1,y:0}}}><span className={`stat-note__icon ${tone}`}><Icon/></span><small>{String(label)}</small><strong>{String(value)}</strong></motion.article>)}
+      </motion.div>
+      <motion.article className="hub-verification" initial={{opacity:0,x:18}} animate={{opacity:1,x:0}} transition={{delay:.14}}><div className="card-heading"><div><span className="eyebrow">LAST ACTIVATION</span><h2>Verifikasi lengkap.</h2></div><span className="pulse-label"><i/> Secure</span></div><div className="hub-verify-track"><span className="done"><Check/></span><i/><span className="done"><Check/></span><i/><span className="active"><Gamepad2/></span></div><div className="hub-verify-labels"><span>Kode unik<small>#8F2A cocok</small></span><span>Device check<small>Disetujui</small></span><span>Game on<small>Cookie aktif</small></span></div><button>Detail aktivasi <ArrowRight/></button></motion.article>
     </section>
 
-    <section className="dash-grid">
-      <article className="balance-panel">
-        <div className="balance-panel__head"><span><WalletCards /> LANGGOR BALANCE</span><button className="icon-btn icon-btn--sm" aria-label="Tambah saldo"><Plus /></button></div>
-        <strong>{rupiah(user.balance)}</strong><p>Siap dipakai untuk checkout berikutnya.</p>
-        <div className="balance-panel__foot"><span><i /> Saldo aktif</span><button>Tambah saldo <ArrowUpRight /></button></div>
-        <div className="balance-orb" />
-      </article>
-      <div className="stats-pair">
-        <article className="stat-note"><span className="stat-note__icon violet"><ShoppingBag /></span><span><small>TOTAL PEMBELIAN</small><strong>12</strong><em>+3 bulan ini</em></span></article>
-        <article className="stat-note"><span className="stat-note__icon cyan"><PackageCheck /></span><span><small>PRODUK AKTIF</small><strong>2</strong><em>Semua dapat diakses</em></span></article>
-      </div>
-      <article className="activity-card">
-        <div className="card-heading"><div><span className="eyebrow">STATUS TERBARU</span><h2>Satu masih berjalan.</h2></div><span className="pulse-label"><i /> Live</span></div>
-        <div className="status-track"><span className="done"><Check /></span><i className="done"/><span className="active"><Clock3 /></span><i/><span><PackageCheck /></span></div>
-        <div className="status-track__labels"><span><b>Bayar</b><small>09 Agu, 14:21</small></span><span><b>Diproses</b><small>Seller menyiapkan</small></span><span><b>Selesai</b><small>Menunggu</small></span></div>
-        <Link to="/purchases">Lihat detail LGR-82775 <ArrowRight /></Link>
-      </article>
-    </section>
+    <section className="hub-actions"><div className="section-title-inline"><span className="eyebrow">AKSI CEPAT</span><span>Kontrol sesi tanpa masuk ke pengaturan panjang.</span></div><motion.div initial="hidden" animate="visible" variants={{hidden:{},visible:{transition:{staggerChildren:.06}}}}>{[
+      ['/store/cookies','Upgrade Cookie','Bandingkan 3 paket',Cookie,'violet'],['/purchases','Kelola device','Lepas sesi lama',MonitorSmartphone,'cyan'],['/purchases','Verifikasi baru','Masukkan kode unik',KeyRound,'pink'],['/profile','Langgor ID','Profil & keamanan',ShieldCheck,'amber']
+    ].map(([to,title,text,Icon,tone])=><motion.div variants={{hidden:{opacity:0,y:10},visible:{opacity:1,y:0}}} whileHover={reduceMotion?{}:{y:-4}} key={String(title)}><Link to={String(to)}><span className={`quick-actions__icon ${tone}`}><Icon/></span><span><strong>{String(title)}</strong><small>{String(text)}</small></span><ArrowRight/></Link></motion.div>)}</motion.div></section>
 
-    <section className="quick-section"><div className="section-title-inline"><span className="eyebrow">JALUR CEPAT</span><span>Yang sering kamu butuhkan.</span></div><div className="quick-actions">
-      <Link to="/store/cookies"><span className="quick-actions__icon violet"><Cookie /></span><span><strong>Beli cookie</strong><small>Lihat stok terbaru</small></span><ArrowUpRight /></Link>
-      <Link to="/store/accounts"><span className="quick-actions__icon pink"><UserRound /></span><span><strong>Cari akun</strong><small>Listing terverifikasi</small></span><ArrowUpRight /></Link>
-      <Link to="/purchases"><span className="quick-actions__icon cyan"><CreditCard /></span><span><strong>Pembelian</strong><small>Riwayat & delivery</small></span><ArrowUpRight /></Link>
-      <Link to="/profile"><span className="quick-actions__icon amber"><Pencil /></span><span><strong>Edit profil</strong><small>Avatar & identitas</small></span><ArrowUpRight /></Link>
-    </div></section>
-
-    <section className="dash-lower">
-      <article className="recent-panel"><div className="card-heading"><div><span className="eyebrow">AKTIVITAS TRANSAKSI</span><h2>Pembelian terakhir</h2></div><Link to="/purchases">Lihat semua <ArrowRight /></Link></div>
-        <div className="order-list">{recentOrders.map(order => <div className="order-row" key={order.id}><span className="order-icon">{order.productIcon}</span><span className="order-name"><strong>{order.productName}</strong><small>{order.id} • {order.date}</small></span><strong className="order-price">{rupiah(order.price)}</strong><StatusBadge status={order.status}/><button className="icon-btn icon-btn--sm" aria-label={`Buka ${order.id}`}><ArrowUpRight /></button></div>)}</div>
-      </article>
-      <article className="account-card">
-        <div className="account-banner"><span className="banner-grid"/><button className="icon-btn icon-btn--sm" aria-label="Edit profil"><Pencil /></button></div>
-        <div className="account-card__body"><span className="avatar avatar--xl">{user.avatar}</span><div className="account-card__identity"><span><strong>{user.nickname}</strong><em><Check /></em></span><small>@{user.username}</small></div><p>{user.bio}</p><div className="account-card__meta"><span><small>ROLE</small><strong>Verified seller</strong></span><span><small>BERGABUNG</small><strong>Mei 2025</strong></span></div><Link className="btn btn--secondary" to="/profile">Kelola profil <ArrowRight /></Link></div>
-      </article>
+    <section className="hub-lower">
+      <article className="hub-devices"><div className="card-heading"><div><span className="eyebrow">DEVICE SESSIONS</span><h2>Perangkat yang kamu setujui</h2></div><button>Kelola semua</button></div><div className="device-list"><div><span className="device-icon is-current"><Laptop/></span><span><strong>Chrome di Windows</strong><small>Sukabumi • aktif sekarang</small></span><em><i/> DEVICE INI</em><button className="icon-btn icon-btn--sm"><ArrowRight/></button></div><div><span className="device-icon"><Smartphone/></span><span><strong>Langgor Mobile</strong><small>Bandung • 2 jam lalu</small></span><em>VERIFIED</em><button className="icon-btn icon-btn--sm"><LogOut/></button></div></div><div className="device-tip"><ShieldCheck/><p>Kalau ada perangkat yang tidak kamu kenal, lepas sesi lalu buat verifikasi unik baru.</p></div></article>
+      <article className="hub-orders"><div className="card-heading"><div><span className="eyebrow">COOKIE HISTORY</span><h2>Aktivasi terakhir</h2></div><Link to="/purchases">Semua <ArrowRight/></Link></div><div>{recentOrders.map(order=><span key={order.id}><i>{order.productIcon}</i><span><strong>{order.productName}</strong><small>{order.date} • {order.id}</small></span><b>{rupiah(order.price)}</b><StatusBadge status={order.status}/></span>)}</div></article>
     </section>
   </div>
 }

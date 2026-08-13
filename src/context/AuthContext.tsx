@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api<{ user: User }>('/auth/me').then(r => setUser(r.user)).catch(() => setUser(null)).finally(() => setLoading(false))
+    api<{ user: User | null }>('/auth/me').then(r => setUser(r.user)).catch(() => setUser(null)).finally(() => setLoading(false))
   }, [])
 
   const login = async (identifier: string, password: string, remember: boolean) => {

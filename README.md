@@ -1,6 +1,6 @@
 # Langgor Store
 
-Full-stack marketplace cookie dan akun digital dengan visual identity khusus Langgor, responsive app shell, role guards, server-side validation, dan flow checkout interaktif.
+Full-stack store untuk Cookie login game Langgor: Cookie Basic, Cookie Premkum, dan Cookie Ultra. Login game menggunakan kode verifikasi unik serta persetujuan dua langkah tanpa password.
 
 ## Menjalankan
 
@@ -32,15 +32,14 @@ NODE_ENV=production npm run preview
 
 | Role | Login | Password |
 |---|---|---|
-| User + seller | `raka@langgor.store` | `Langgor123!` |
+| Player | `raka@langgor.store` | `Langgor123!` |
 | Admin | `admin@langgor.store` | `Langgor123!` |
 
 ## Route utama
 
-- Publik: `/`, `/store/cookies`, `/store/accounts`, `/product/:id`, `/u/:username`
+- Publik: `/`, `/store/cookies`, `/product/:id`, `/u/:username`
 - Auth: `/login`, `/register`, `/forgot-password`, `/reset-password`
-- User: `/dashboard`, `/purchases`, `/profile`
-- Seller: `/seller`, `/seller/new`
+- Game Hub: `/dashboard`, `/purchases`, `/profile`
 - Admin: `/admin`
 
 ## Struktur
@@ -50,7 +49,7 @@ src/
   components/      shared UI, navigation, cards, guards
   context/         auth and toast state
   lib/             API client and helpers
-  pages/           public, auth, user, seller, admin pages
+  pages/           public, auth, Game Hub, and admin pages
 server/
   index.ts         Express API, auth, RBAC, CSRF, validation
   schema.sql       production PostgreSQL relational schema
@@ -63,8 +62,8 @@ server/
 - Double-submit CSRF token untuk semua mutation.
 - Rate limiting pada login/register/recovery.
 - Zod validation di semua endpoint mutation.
-- Backend RBAC untuk user, seller, dan admin.
-- Ownership check saat seller menghapus listing.
+- Backend RBAC untuk user dan admin.
+- Hanya tiga package ID resmi yang dapat diproses oleh endpoint checkout.
 - Harga checkout dihitung ulang di server; client tidak dapat menentukan nominal.
 - Admin action memiliki audit record.
 - Upload profil memeriksa size limit, magic bytes, format, dimensi, rasio banner, nama file acak, dan tidak menerima SVG.

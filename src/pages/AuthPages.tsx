@@ -15,8 +15,8 @@ function AuthArt({ mode }: { mode: Mode }) {
     <div className="auth-art__header"><Logo /><span>SECURE ENTRY / 2026</span></div>
     <div className="auth-art__message">
       <span className="auth-art__eyebrow"><i /> RUANG PERSONALMU</span>
-      <h2>{mode === 'register' ? <>Mulai dari profil.<br/>Lanjut ke <em>etalase.</em></> : <>Masuk cepat.<br/>Pesanan tetap <em>tercatat.</em></>}</h2>
-      <p>Cookie, akun digital, status pembayaran, dan aktivitas seller—semuanya ada di satu ruang yang mudah dipantau.</p>
+      <h2>{mode === 'register' ? <>Buat Langgor ID.<br/>Lanjut ke <em>game gate.</em></> : <>Masuk cepat.<br/>Sesi tetap <em>terjaga.</em></>}</h2>
+      <p>Cookie game, perangkat aktif, verifikasi dua langkah, dan riwayat sesi—semuanya ada di satu Game Hub yang mudah dipantau.</p>
     </div>
     <div className="auth-art__ticket"><div><span className="ticket-icon">L</span><span><small>LANGGOR PASS</small><strong>SESSION PROTECTED</strong></span></div><div className="ticket-code">•• •• ••</div></div>
     <div className="auth-art__footer"><span><ShieldCheck /> Password di-hash</span><span><LockKeyhole /> Sesi aman</span></div>
@@ -76,7 +76,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   }
 
   const title = mode === 'login' ? 'Masuk ke ruangmu' : mode === 'register' ? 'Buat akun Langgor' : mode === 'forgot' ? 'Pulihkan akses' : 'Atur password baru'
-  const subtitle = mode === 'login' ? 'Lanjutkan transaksi atau lihat pesanan terakhir.' : mode === 'register' ? 'Satu akun untuk belanja, jualan, dan kelola profil.' : mode === 'forgot' ? 'Kami kirim tautan reset jika email terdaftar.' : 'Gunakan kombinasi yang belum pernah kamu pakai.'
+  const subtitle = mode === 'login' ? 'Kelola Cookie, perangkat, dan verifikasi game-mu.' : mode === 'register' ? 'Satu Langgor ID untuk aktivasi Cookie dan kontrol semua sesi game.' : mode === 'forgot' ? 'Kami kirim tautan pemulihan jika email terdaftar.' : 'Gunakan kombinasi yang belum pernah kamu pakai.'
 
   return <div className="auth-page">
     <AuthArt mode={mode} />

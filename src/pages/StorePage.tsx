@@ -1,58 +1,54 @@
-import { ArrowDownWideNarrow, Check, ChevronDown, Cookie, Filter, Info, LayoutGrid, List, PackageOpen, Search, ShieldCheck, SlidersHorizontal, Sparkles, Store, X } from 'lucide-react'
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { ProductCard } from '../components/ProductCard'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { ArrowRight, Check, Cookie, Fingerprint, Gamepad2, HelpCircle, KeyRound, LockKeyhole, MonitorSmartphone, ShieldCheck, Sparkles, TimerReset, Zap } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
-import { EmptyState, Skeleton } from '../components/UI'
 import { products, rupiah } from '../data'
 import type { ProductKind } from '../types'
 
-const categoryMap = { cookie: ['Semua', 'Streaming', 'Design', 'Music', 'Utility'], account: ['Semua', 'Gaming', 'Social Media', 'Productivity'] }
+const needs = [
+  { id:'casual', label:'Main sesekali', product:'cookie-basic', text:'Satu device, durasi singkat.' },
+  { id:'routine', label:'Main rutin', product:'cookie-premkum', text:'Dua device dan 30 hari.' },
+  { id:'intense', label:'Main intensif', product:'cookie-ultra', text:'Durasi dan prioritas tertinggi.' },
+]
 
 export function StorePage({ kind }: { kind: ProductKind }) {
-  const [query, setQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
-  const [category, setCategory] = useState('Semua')
-  const [sort, setSort] = useState('newest')
-  const [available, setAvailable] = useState(false)
-  const [maxPrice, setMaxPrice] = useState(kind === 'cookie' ? 100000 : 5000000)
-  const [layout, setLayout] = useState<'grid' | 'row'>('grid')
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const isCookie = kind === 'cookie'
+  const [need,setNeed] = useState('routine')
+  const reduceMotion = useReducedMotion()
+  const selected = useMemo(() => needs.find(item => item.id === need)!, [need])
+  if (kind === 'account') return <Navigate to="/store/cookies" replace />
 
-  useEffect(() => { setLoading(true); const t = window.setTimeout(() => setLoading(false), 420); return () => clearTimeout(t) }, [kind])
-  useEffect(() => { setCategory('Semua'); setMaxPrice(kind === 'cookie' ? 100000 : 5000000) }, [kind])
-
-  const filtered = useMemo(() => {
-    const list = products.filter(p => p.kind === kind && (category === 'Semua' || p.category === category) && p.price <= maxPrice && (!available || p.status !== 'sold') && (p.name + p.description + p.seller.name).toLowerCase().includes(deferredQuery.toLowerCase()))
-    return [...list].sort((a,b) => sort === 'low' ? a.price-b.price : sort === 'high' ? b.price-a.price : sort === 'popular' ? b.sold-a.sold : new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime())
-  }, [kind, category, maxPrice, available, deferredQuery, sort])
-
-  const reset = () => { setQuery(''); setCategory('Semua'); setAvailable(false); setMaxPrice(kind === 'cookie' ? 100000 : 5000000); setSort('newest') }
-
-  const Filters = () => <>
-    <div className="filter-group"><label>Cari listing</label><div className="search-control"><Search /><input value={query} onChange={e => setQuery(e.target.value)} placeholder={isCookie ? 'Nama cookie, kategori…' : 'Judul, seller…'} /><kbd>⌘ K</kbd></div></div>
-    <div className="filter-group"><label>Kategori</label><div className="category-options">{categoryMap[kind].map(cat => <button className={category === cat ? 'active' : ''} key={cat} onClick={() => setCategory(cat)}><span>{cat}</span>{category === cat && <Check />}</button>)}</div></div>
-    <div className="filter-group"><div className="filter-label-row"><label>Harga maksimum</label><strong>{rupiah(maxPrice)}</strong></div><input className="range" type="range" min={isCookie ? 10000 : 100000} max={isCookie ? 100000 : 5000000} step={isCookie ? 5000 : 100000} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} /><div className="range-label"><span>{rupiah(isCookie ? 10000 : 100000)}</span><span>{rupiah(isCookie ? 100000 : 5000000)}</span></div></div>
-    <div className="filter-group filter-group--toggle"><span><label>Hanya yang tersedia</label><small>Sembunyikan listing habis</small></span><button className={`switch ${available ? 'active' : ''}`} role="switch" aria-checked={available} onClick={() => setAvailable(v => !v)}><i /></button></div>
-    {!isCookie && <div className="filter-group"><label>Seller</label><select><option>Semua seller</option><option>Terverifikasi</option><option>Rating 4.8+</option></select></div>}
-    <button className="filter-reset" onClick={reset}><X /> Reset semua filter</button>
-  </>
-
-  return <div className={`store-page store-page--${kind}`}>
+  return <div className="cookie-shop">
     <PublicHeader />
     <main>
-      <section className="store-hero"><div className="store-hero__pattern"/><div className="container store-hero__inner"><div><span className="store-hero__icon">{isCookie ? <Cookie /> : <Store />}</span><span className="eyebrow">{isCookie ? 'COOKIE SHELF / READY STOCK' : 'USER LISTINGS / VERIFIED FLOW'}</span><h1>{isCookie ? <>Cookie yang siap<br/><em>langsung dipakai.</em></> : <>Akun digital dari<br/><em>seller terpercaya.</em></>}</h1><p>{isCookie ? 'Cari berdasarkan kebutuhan, bandingkan seller, lalu akses panduan setelah transaksi selesai.' : 'Spesifikasi yang relevan tampil terbuka. Credential sensitif tidak pernah dipajang di listing.'}</p></div><div className="store-hero__stat"><span>{isCookie ? '58' : '124'}</span><small>LISTING AKTIF</small><i/><span>{isCookie ? '4.8' : '4.7'}</span><small>RATING RATA-RATA</small></div></div></section>
-      {!isCookie && <div className="container"><div className="safety-note"><ShieldCheck /><div><strong>Credential tetap privat.</strong><span>Password, session token, recovery code, dan data sensitif baru tersedia melalui delivery aman setelah pembayaran tervalidasi.</span></div><button aria-label="Info keamanan"><Info /></button></div></div>}
-      <section className="store-content container">
-        <aside className="filter-sidebar"><div className="filter-sidebar__head"><span><SlidersHorizontal /> Filter</span><small>{filtered.length} produk</small></div><Filters /></aside>
-        <div className="catalog">
-          <div className="catalog-toolbar"><div><span className="eyebrow">HASIL PENCARIAN</span><h2>{filtered.length} listing ditemukan</h2></div><div className="catalog-toolbar__actions"><button className="btn btn--secondary filter-mobile" onClick={() => setFiltersOpen(true)}><Filter /> Filter</button><label className="sort-select"><ArrowDownWideNarrow /><select value={sort} onChange={e => setSort(e.target.value)} aria-label="Urutkan"><option value="newest">Terbaru</option><option value="low">Harga terendah</option><option value="high">Harga tertinggi</option><option value="popular">Popular</option></select><ChevronDown /></label><div className="layout-switch"><button className={layout === 'grid' ? 'active' : ''} onClick={() => setLayout('grid')} aria-label="Tampilan grid"><LayoutGrid /></button><button className={layout === 'row' ? 'active' : ''} onClick={() => setLayout('row')} aria-label="Tampilan daftar"><List /></button></div></div></div>
-          {loading ? <div className={`product-grid product-grid--${layout}`}>{[1,2,3,4].map(i => <div className="product-card product-skeleton" key={i}><Skeleton className="product-skeleton__art"/><div><Skeleton/><Skeleton/><Skeleton/></div></div>)}</div> : filtered.length ? <div className={`product-grid product-grid--${layout}`}>{filtered.map(p => <ProductCard key={p.id} product={p} layout={layout} />)}</div> : <EmptyState icon={<PackageOpen />} title="Belum ada yang cocok" text="Coba perluas rentang harga atau gunakan kategori lain." action={<button className="btn btn--secondary" onClick={reset}>Hapus filter</button>} />}
-          {filtered.length > 0 && <div className="catalog-end"><Sparkles /><span>Semua listing sudah ditampilkan.</span></div>}
-        </div>
+      <section className="cookie-shop-hero"><div className="game-grid-bg"/><div className="container cookie-shop-hero__inner">
+        <motion.div initial={{opacity:0,y:18}} animate={{opacity:1,y:0}}><span className="game-kicker">COOKIE SELECT / GAME ACCESS</span><h1>Tiga Cookie.<br/><em>Nggak pakai password.</em></h1><p>Semua Cookie membuka game dengan kode unik dan verifikasi dua langkah. Pilih berdasarkan durasi dan jumlah perangkat.</p></motion.div>
+        <motion.div className="shop-signal" initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:.15}}><motion.span animate={reduceMotion?{}:{rotate:360}} transition={{duration:12,repeat:Infinity,ease:'linear'}}/><i><Cookie/></i><div><strong>GAME GATE</strong><small>Ready to verify</small></div><em>ONLINE</em></motion.div>
+      </div></section>
+
+      <section className="cookie-picker container">
+        <div className="need-picker"><div><span className="game-kicker">BANTU PILIH</span><h2>Cara mainmu seperti apa?</h2></div><div className="need-tabs">{needs.map(item=><button key={item.id} className={need===item.id?'active':''} onClick={()=>setNeed(item.id)}>{need===item.id&&<motion.i layoutId="need-active"/>}<span>{item.label}</span></button>)}</div><AnimatePresence mode="wait"><motion.p key={selected.id} initial={{opacity:0,y:5}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-5}}>{selected.text} Rekomendasi: <b>{products.find(p=>p.id===selected.product)?.name}</b></motion.p></AnimatePresence></div>
+
+        <motion.div className="cookie-tier-grid" initial="hidden" animate="visible" variants={{hidden:{},visible:{transition:{staggerChildren:.09}}}}>
+          {products.map((product,i)=><motion.article key={product.id} variants={{hidden:{opacity:0,y:24},visible:{opacity:1,y:0}}} whileHover={reduceMotion?{}:{y:-8}} className={`cookie-tier cookie-tier--${product.accent} ${selected.product===product.id?'is-recommended':''}`}>
+            <div className="cookie-tier__signal"><span>{product.icon}</span><motion.i animate={reduceMotion?{}:{scale:[1,1.25,1],opacity:[.25,.05,.25]}} transition={{duration:2.4,repeat:Infinity}}/></div>
+            <div className="cookie-tier__heading"><span>{product.category}</span>{selected.product===product.id&&<em><Sparkles/> Cocok buatmu</em>}<h2>{product.name}</h2><p>{product.description}</p></div>
+            <div className="cookie-tier__price"><strong>{rupiah(product.price)}</strong><small>sekali aktivasi</small></div>
+            <ul>{product.specs.map(spec=><li key={spec}><Check/>{spec}</li>)}</ul>
+            <Link to={`/product/${product.id}`} className={`btn ${i===1?'btn--primary':'btn--secondary'}`}>Aktifkan {product.name.replace('Cookie ','')} <ArrowRight/></Link>
+            <span className="cookie-tier__glow"/>
+          </motion.article>)}
+        </motion.div>
+
+        <div className="compare-title"><span className="game-kicker">BANDINGKAN</span><h2>Bedanya langsung kelihatan.</h2></div>
+        <div className="cookie-compare"><div className="cookie-compare__head"><span>Fitur</span>{products.map(p=><strong key={p.id}>{p.name.replace('Cookie ','')}</strong>)}</div>{[
+          ['Masa aktif','7 hari','30 hari','90 hari'],['Perangkat aktif','1 device','2 device','3 device'],['Verifikasi unik','Ya','Ya','Ya'],['Verifikasi 2 langkah','Ya','Ya','Ya'],['Prioritas aktivasi','Normal','Prioritas','Tertinggi'],['Session recovery','Standar','Cepat','Paling cepat']
+        ].map((row,i)=><motion.div className="cookie-compare__row" key={row[0]} initial={{opacity:0,x:-8}} whileInView={{opacity:1,x:0}} viewport={{once:true}} transition={{delay:i*.04}}>{row.map((cell,j)=><span key={`${i}-${j}`}>{j>0&&(cell==='Ya')?<Check/>:null}{cell}</span>)}</motion.div>)}</div>
       </section>
+
+      <section className="shop-verify"><div className="container shop-verify__inner"><div><span className="game-kicker">SETELAH CHECKOUT</span><h2>Bayar selesai.<br/>Verifikasi belum.</h2><p>Cookie baru dibuat ketika dua tahap keamanan benar-benar selesai di server game.</p><Link to="/register" className="btn btn--light">Buat Langgor ID <ArrowRight/></Link></div><div className="shop-verify__steps">{[[KeyRound,'Kode unik','Hubungkan order'],[Fingerprint,'Konfirmasi','Setujui device'],[Gamepad2,'Game on','Cookie aktif']].map(([Icon,title,text],i)=><motion.article key={String(title)} initial={{opacity:0,y:15}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.12}}><span><Icon/></span><small>0{i+1}</small><strong>{String(title)}</strong><p>{String(text)}</p>{i<2&&<ArrowRight/>}</motion.article>)}</div></div></section>
+
+      <section className="shop-help"><div className="container"><div><HelpCircle/><span><strong>Masih bingung pilih yang mana?</strong><small>Cookie Premkum paling pas untuk kebanyakan pemain rutin.</small></span></div><div><ShieldCheck/><span><strong>Tidak ada password.</strong><small>Cookie ditandatangani server dan terikat ke device.</small></span></div><div><TimerReset/><span><strong>Aktivasi cepat.</strong><small>Rata-rata verifikasi selesai dalam 12 detik.</small></span></div></div></section>
     </main>
-    {filtersOpen && <div className="filter-drawer-backdrop" onClick={e => e.target === e.currentTarget && setFiltersOpen(false)}><aside className="filter-drawer"><div className="filter-drawer__head"><h2>Filter produk</h2><button className="icon-btn" onClick={() => setFiltersOpen(false)}><X /></button></div><div className="filter-drawer__body"><Filters /></div><div className="filter-drawer__foot"><button className="btn btn--primary" onClick={() => setFiltersOpen(false)}>Tampilkan {filtered.length} produk</button></div></aside></div>}
   </div>
 }
