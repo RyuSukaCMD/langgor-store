@@ -57,7 +57,7 @@ server/
 
 ## Admin panel
 
-Route `/admin` dilindungi client guard dan backend RBAC. Admin dapat menambah, mengedit, serta menghapus produk; mengubah harga, stok, status, aksen, dan spesifikasi; mengganti role pengguna (`user`, `moderator`, `admin`); serta suspend/restore akun. Katalog publik mengambil data dari endpoint `/api/products`, sehingga perubahan admin langsung tercermin di store.
+Route `/admin` dilindungi client guard dan backend RBAC. Admin dapat menambah, mengedit, serta menghapus produk; mengubah harga, stok, status, aksen, dan spesifikasi; mengganti role pengguna (`user`, `moderator`, `admin`); serta suspend/restore akun. Katalog publik mengambil data dari endpoint `/api/products`, sehingga perubahan admin langsung tercermin di store. `api/[...path].ts` menyediakan Express API catch-all untuk Vercel, sedangkan session cookie menggunakan payload bertanda tangan HMAC agar authorization tetap dapat diverifikasi pada runtime serverless.
 
 ## Security yang sudah diterapkan
 
