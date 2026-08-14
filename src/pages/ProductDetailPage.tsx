@@ -1,4 +1,4 @@
-import { ArrowLeft, BadgeCheck, Banknote, Check, ChevronRight, Clock3, Copy, CreditCard, Fingerprint, Heart, Info, LockKeyhole, PackageCheck, ShieldCheck, ShoppingBag, Star, Store, WalletCards } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, Banknote, Check, ChevronRight, Clock3, Copy, CreditCard, Fingerprint, Heart, Info, LoaderCircle, LockKeyhole, PackageCheck, ShieldCheck, ShoppingBag, Star, Store, WalletCards } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
@@ -7,13 +7,15 @@ import { SectionHead, StatusBadge } from '../components/StatusBadge'
 import { Button, Modal } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { products, rupiah } from '../data'
+import { useProducts } from '../context/ProductContext'
+import { rupiah } from '../data'
 import { api } from '../lib/api'
 
 type CheckoutStep = 'confirm' | 'payment' | 'processing' | 'completed'
 
 export function ProductDetailPage() {
   const { id } = useParams()
+  const { products, loading: productsLoading } = useProducts()
   const product = products.find(p => p.id === id)
   const related = products.filter(p => p.kind === product?.kind && p.id !== id).slice(0,3)
   const [liked, setLiked] = useState(false)
@@ -26,6 +28,7 @@ export function ProductDetailPage() {
   const { showToast } = useToast()
   const navigate = useNavigate()
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [id])
+  if (productsLoading) return <div className="route-loader"><LoaderCircle className="spin"/><span>Memuat Cookie…</span></div>
   if (!product) return <div><PublicHeader/><main className="not-found"><h1>Produk tidak ditemukan.</h1><Link className="btn btn--primary" to="/store/cookies"><ArrowLeft/> Kembali ke store</Link></main></div>
 
   const start = () => {

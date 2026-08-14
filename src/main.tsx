@@ -5,6 +5,7 @@ import { MotionConfig } from 'motion/react'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
+import { ProductProvider } from './context/ProductContext'
 import './styles.css'
 import './responsive.css'
 import './game-redesign.css'
@@ -15,7 +16,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <MotionConfig reducedMotion="user" transition={{ duration: .4, ease: [0.22, 1, 0.36, 1] }}>
-        <ToastProvider><AuthProvider><App /></AuthProvider></ToastProvider>
+        <ToastProvider><AuthProvider><ProductProvider><App /></ProductProvider></AuthProvider></ToastProvider>
       </MotionConfig>
     </BrowserRouter>
   </StrictMode>,

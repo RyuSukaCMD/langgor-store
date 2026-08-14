@@ -11,6 +11,8 @@ import { z } from 'zod'
 import { config } from './config'
 import { createRateLimiters } from './rateLimit'
 import { isSupabaseConfigured } from './supabase'
+import { products as seedProducts } from '../src/data'
+import type { Product } from '../src/types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
@@ -31,19 +33,23 @@ app.use(cookieParser())
 app.use('/api', limiters.api)
 
 const safeUser = (user: StoredUser) => ({ id:user.id, username:user.username, email:user.email, nickname:user.nickname, role:user.role, balance:user.balance, avatar:user.avatar, bio:user.bio, joinedAt:user.joinedAt, accent:user.accent, seller:false })
-type Role = 'user'|'admin'
+type Role = 'user'|'moderator'|'admin'
 type StoredUser = { id:string; username:string; email:string; nickname:string; role:Role; balance:number; avatar:string; bio:string; joinedAt:string; accent:string; passwordHash:string; suspended?:boolean }
 type AuthedRequest = Request & { user?: StoredUser; sessionId?: string }
 
+const demoPasswordHash=bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds)
 const users: StoredUser[] = [
-  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'user', balance:248500, avatar:'RA', bio:'Member aktif Langgor Store.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) },
-  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga validation system tetap normal.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:bcrypt.hashSync('Langgor123!',config.auth.bcryptRounds) }
+  { id:'u-raka', username:'raka_sore', email:'raka@langgor.store', nickname:'Raka Aditya', role:'user', balance:248500, avatar:'RA', bio:'Member aktif Langgor Store.', joinedAt:'2025-05-12', accent:'#8b5cf6', passwordHash:demoPasswordHash },
+  { id:'u-alya', username:'alyarn', email:'alya@example.com', nickname:'Alya Rani', role:'moderator', balance:92000, avatar:'AR', bio:'Tim moderasi Langgor.', joinedAt:'2026-02-18', accent:'#ec4899', passwordHash:demoPasswordHash },
+  { id:'u-bimo', username:'bimoarga', email:'bimo@example.com', nickname:'Bimo Arga', role:'user', balance:18000, avatar:'BA', bio:'Member Langgor Store.', joinedAt:'2026-07-02', accent:'#22d3ee', passwordHash:demoPasswordHash, suspended:true },
+  { id:'u-admin', username:'admin', email:'admin@langgor.store', nickname:'Nara Admin', role:'admin', balance:0, avatar:'NA', bio:'Menjaga validation system tetap normal.', joinedAt:'2025-01-01', accent:'#22d3ee', passwordHash:demoPasswordHash }
 ]
 const sessions = new Map<string,{userId:string;expiresAt:number}>()
 const hashSession = (token:string) => crypto.createHmac('sha256',config.auth.sessionSecret).update(token).digest('hex')
 const auditLogs: Array<{id:string;adminId:string;action:string;target:string;at:string;ip:string}> = []
 const orders: Array<{id:string;userId:string;productId:string;price:number;status:string;paymentMethod:string;createdAt:string}> = []
-const productPrices: Record<string,number> = { 'cookie-basic':6000,'cookie-premkum':12000,'cookie-ultra':25000 }
+const catalog:Product[]=structuredClone(seedProducts)
+const productPrices:Record<string,number>=Object.fromEntries(catalog.map(product=>[product.id,product.price]))
 
 app.use((req,res,next)=>{
   if (!req.cookies[config.csrf.cookieName]) res.cookie(config.csrf.cookieName,crypto.randomBytes(24).toString('hex'),{ httpOnly:false, sameSite:config.auth.cookieSameSite, secure:config.auth.cookieSecure, maxAge:config.csrf.ttlMs })
@@ -74,8 +80,16 @@ const parse = <T>(schema:z.ZodType<T>,body:unknown,res:Response):T|null=>{const 
 
 const loginSchema=z.object({identifier:z.string().min(3).max(100),password:z.string().min(8).max(128),remember:z.boolean().default(false)})
 const registerSchema=z.object({username:z.string().regex(/^[a-z0-9_]{4,20}$/,'Username tidak valid.'),email:z.string().email('Email tidak valid.').max(120),password:z.string().min(8,'Password minimal 8 karakter.').max(128)})
+const productInputSchema=z.object({
+  name:z.string().min(4,'Nama produk minimal 4 karakter.').max(80),category:z.string().min(2).max(40),description:z.string().min(20).max(400),
+  price:z.number().int().min(1000).max(100000000),stock:z.number().int().min(0).max(999999),status:z.enum(['ready','limited','sold']),
+  specs:z.array(z.string().min(2).max(80)).min(1).max(12),icon:z.string().min(1).max(2),accent:z.enum(['violet','pink','cyan','amber'])
+})
+const userAdminUpdateSchema=z.object({role:z.enum(['user','moderator','admin']).optional(),suspended:z.boolean().optional()}).refine(value=>value.role!==undefined||value.suspended!==undefined,'Tidak ada perubahan.')
+const audit=(req:AuthedRequest,action:string,target:string)=>{if(!req.user)return;const ip=crypto.createHmac('sha256',config.observability.auditIpHashSecret).update(req.ip||'unknown').digest('hex');auditLogs.push({id:crypto.randomUUID(),adminId:req.user.id,action,target,at:new Date().toISOString(),ip})}
 
 app.get('/api/health',(_req,res)=>res.json({ok:true,time:new Date().toISOString(),environment:config.env,services:{supabase:isSupabaseConfigured?'configured':'not-configured',rateLimit:config.rateLimit.store}}))
+app.get('/api/products',(_req,res)=>res.json({products:catalog}))
 app.get('/api/auth/me',(req:AuthedRequest,res)=>res.json({user:req.user?safeUser(req.user):null}))
 app.post('/api/auth/login',limiters.auth,async(req:AuthedRequest,res)=>{
   const body=parse(loginSchema,req.body,res);if(!body)return
@@ -122,17 +136,40 @@ app.use('/media',express.static(path.join(root,'uploads'),{maxAge:'7d',immutable
 
 app.post('/api/orders',requireAuth,(req:AuthedRequest,res)=>{
   const schema=z.object({productId:z.string().max(80),paymentMethod:z.enum(['balance','bank','ewallet'])});const body=parse(schema,req.body,res);if(!body||!req.user)return
-  const price=productPrices[body.productId];if(!price)return res.status(404).json({message:'Produk tidak ditemukan atau sudah diturunkan.'})
+  const product=catalog.find(item=>item.id===body.productId);const price=productPrices[body.productId]
+  if(!product||!price)return res.status(404).json({message:'Produk tidak ditemukan atau sudah diturunkan.'})
+  if(product.status==='sold'||product.stock<1)return res.status(409).json({message:'Stok produk sedang habis.'})
   if(body.paymentMethod==='balance'&&req.user.balance<price)return res.status(409).json({message:'Saldo tidak cukup. Pilih Virtual Account atau e-wallet.'})
   const order={id:`LGR-${Math.floor(10000+Math.random()*89999)}`,userId:req.user.id,productId:body.productId,price,status:'processing',paymentMethod:body.paymentMethod,createdAt:new Date().toISOString()}
   if(body.paymentMethod==='balance')req.user.balance-=price
+  product.stock-=1;if(product.stock===0)product.status='sold'
   orders.push(order);res.status(201).json({orderId:order.id,status:order.status,amount:order.price})
 })
 
-app.post('/api/admin/action',requireAdmin,(req:AuthedRequest,res)=>{
-  const schema=z.object({type:z.enum(['suspend','restore','approve','reject']),id:z.string().min(1).max(100),label:z.string().max(100)});const body=parse(schema,req.body,res);if(!body||!req.user)return
-  if(body.type==='suspend'||body.type==='restore'){const target=users.find(u=>u.id===body.id);if(target)target.suspended=body.type==='suspend'}
-  const ip=crypto.createHmac('sha256',config.observability.auditIpHashSecret).update(req.ip||'unknown').digest('hex');auditLogs.push({id:crypto.randomUUID(),adminId:req.user.id,action:body.type,target:body.id,at:new Date().toISOString(),ip});res.json({ok:true,auditId:auditLogs.at(-1)?.id})
+app.get('/api/admin/users',requireAdmin,(_req:AuthedRequest,res)=>res.json({users:users.map(user=>({id:user.id,username:user.username,email:user.email,nickname:user.nickname,role:user.role,status:user.suspended?'suspended':'active',balance:user.balance,joinedAt:user.joinedAt,avatar:user.avatar}))}))
+app.patch('/api/admin/users/:id',requireAdmin,(req:AuthedRequest,res)=>{
+  const body=parse(userAdminUpdateSchema,req.body,res);if(!body||!req.user)return
+  const id=String(req.params.id);const target=users.find(user=>user.id===id);if(!target)return res.status(404).json({message:'Pengguna tidak ditemukan.'})
+  if(target.id===req.user.id&&(body.suspended===true||(body.role&&body.role!=='admin')))return res.status(422).json({message:'Admin tidak dapat menangguhkan atau menurunkan role akun sendiri.'})
+  if(body.role)target.role=body.role;if(body.suspended!==undefined)target.suspended=body.suspended
+  audit(req,'user.update',target.id);res.json({user:{...safeUser(target),status:target.suspended?'suspended':'active'}})
+})
+
+app.post('/api/admin/products',requireAdmin,(req:AuthedRequest,res)=>{
+  const body=parse(productInputSchema,req.body,res);if(!body)return
+  const base=body.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,52)||'cookie'
+  let id=base;while(catalog.some(item=>item.id===id))id=`${base}-${crypto.randomBytes(2).toString('hex')}`
+  const product:Product={id,kind:'cookie',...body,seller:{name:'Langgor Store',username:'langgor',verified:true,rating:5},rating:5,sold:0,createdAt:new Date().toISOString()}
+  catalog.unshift(product);productPrices[id]=product.price;audit(req,'product.create',id);res.status(201).json({product})
+})
+app.patch('/api/admin/products/:id',requireAdmin,(req:AuthedRequest,res)=>{
+  const schema=productInputSchema.partial().refine(value=>Object.keys(value).length>0,'Tidak ada perubahan.');const body=parse(schema,req.body,res);if(!body)return
+  const id=String(req.params.id);const product=catalog.find(item=>item.id===id);if(!product)return res.status(404).json({message:'Produk tidak ditemukan.'})
+  Object.assign(product,body);productPrices[id]=product.price;audit(req,'product.update',id);res.json({product})
+})
+app.delete('/api/admin/products/:id',requireAdmin,(req:AuthedRequest,res)=>{
+  const id=String(req.params.id);const index=catalog.findIndex(item=>item.id===id);if(index<0)return res.status(404).json({message:'Produk tidak ditemukan.'})
+  catalog.splice(index,1);delete productPrices[id];audit(req,'product.delete',id);res.json({ok:true})
 })
 
 // Error responses never expose stack traces to the browser.

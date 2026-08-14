@@ -55,6 +55,10 @@ server/
   schema.sql       production PostgreSQL relational schema
 ```
 
+## Admin panel
+
+Route `/admin` dilindungi client guard dan backend RBAC. Admin dapat menambah, mengedit, serta menghapus produk; mengubah harga, stok, status, aksen, dan spesifikasi; mengganti role pengguna (`user`, `moderator`, `admin`); serta suspend/restore akun. Katalog publik mengambil data dari endpoint `/api/products`, sehingga perubahan admin langsung tercermin di store.
+
 ## Security yang sudah diterapkan
 
 - Password demo di-hash dengan bcrypt; password tidak pernah dikembalikan oleh API.

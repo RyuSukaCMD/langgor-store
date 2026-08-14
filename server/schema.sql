@@ -10,7 +10,7 @@ CREATE TABLE users (
   username citext NOT NULL UNIQUE CHECK (username ~ '^[a-z0-9_]{4,20}$'),
   email citext NOT NULL UNIQUE,
   password_hash text NOT NULL,
-  role text NOT NULL DEFAULT 'user' CHECK (role IN ('user','admin')),
+  role text NOT NULL DEFAULT 'user' CHECK (role IN ('user','moderator','admin')),
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','deleted')),
   balance bigint NOT NULL DEFAULT 0 CHECK (balance >= 0),
   email_verified_at timestamptz,
@@ -28,20 +28,26 @@ CREATE TABLE profiles (
 );
 
 CREATE TABLE cookie_plans (
-  id text PRIMARY KEY CHECK (id IN ('cookie-basic','cookie-premkum','cookie-ultra')),
-  name text NOT NULL UNIQUE CHECK (name IN ('Cookie Basic','Cookie Premkum','Cookie Ultra')),
+  id text PRIMARY KEY CHECK (id ~ '^[a-z0-9-]{3,64}$'),
+  name varchar(80) NOT NULL UNIQUE,
+  category varchar(40) NOT NULL,
+  description varchar(400) NOT NULL,
   price bigint NOT NULL CHECK (price >= 1000),
-  priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 3),
-  criteria jsonb NOT NULL DEFAULT '{}'::jsonb,
-  active boolean NOT NULL DEFAULT true,
+  stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  status text NOT NULL DEFAULT 'ready' CHECK (status IN ('ready','limited','sold')),
+  specs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  icon varchar(2) NOT NULL DEFAULT 'C',
+  accent text NOT NULL DEFAULT 'violet' CHECK (accent IN ('violet','pink','cyan','amber')),
+  sold integer NOT NULL DEFAULT 0 CHECK (sold >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-INSERT INTO cookie_plans (id,name,price,priority,criteria) VALUES
-  ('cookie-basic','Cookie Basic',6000,1,'{"stock":"standard","validation":"realtime"}'),
-  ('cookie-premkum','Cookie Premkum',12000,2,'{"stock":"higher","validation":"priority"}'),
-  ('cookie-ultra','Cookie Ultra',25000,3,'{"stock":"top","validation":"highest"}')
-ON CONFLICT (id) DO UPDATE SET price=EXCLUDED.price,priority=EXCLUDED.priority,criteria=EXCLUDED.criteria,updated_at=now();
+INSERT INTO cookie_plans (id,name,category,description,price,stock,status,specs,icon,accent) VALUES
+  ('cookie-basic','Cookie Basic','Normal Cookie','Cookie login dari stok standar dengan pemeriksaan real-time sebelum dikirim otomatis.',6000,13,'ready','["1 Cookie login","Pemeriksaan real-time","Pengiriman otomatis"]','B','cyan'),
+  ('cookie-premkum','Cookie Premkum','Highest Cookie','Cookie login dari kelompok stok dengan kriteria lebih tinggi dan prioritas pengiriman.',12000,8,'ready','["1 Cookie login","Prioritas stok","Pengiriman otomatis"]','P','violet'),
+  ('cookie-ultra','Cookie Ultra','Top Stock','Pilihan Cookie login dari stok teratas dengan prioritas validasi dan delivery tertinggi.',25000,4,'limited','["1 Cookie login","Validasi prioritas","Pengiriman otomatis"]','U','pink')
+ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE cookie_inventory (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

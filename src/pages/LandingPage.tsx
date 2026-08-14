@@ -3,7 +3,8 @@ import { ArrowRight, Check, ChevronDown, Cookie, Fingerprint, KeyRound, LockKeyh
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
-import { products, rupiah } from '../data'
+import { useProducts } from '../context/ProductContext'
+import { rupiah } from '../data'
 
 const reveal = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } }
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: .09 } } }
@@ -15,6 +16,7 @@ const planMeta = {
 
 export function LandingPage() {
   const [faq, setFaq] = useState<number | null>(0)
+  const { products } = useProducts()
   const reduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll()
   const panelY = useTransform(scrollYProgress, [0, .3], [0, reduceMotion ? 0 : 55])
@@ -70,7 +72,7 @@ export function LandingPage() {
       <section className="game-section game-plans" id="spesifikasi"><div className="container">
         <motion.div className="game-section-head" initial="hidden" whileInView="visible" viewport={{once:true,amount:.5}} variants={reveal}><div><span className="game-kicker">3 PILIHAN / INSTANT DELIVERY</span><h2>Pilih Cookie sesuai<br/>spesifikasi yang dicari.</h2></div><p>Semua Cookie diperiksa sebelum delivery. Perbedaannya ada pada kriteria akun, prioritas stok, dan harga.</p></motion.div>
         <motion.div className="plan-grid" initial="hidden" whileInView="visible" viewport={{once:true,amount:.2}} variants={stagger}>
-          {products.map((product,i) => { const meta=planMeta[product.id as keyof typeof planMeta]; return <motion.article key={product.id} variants={reveal} whileHover={reduceMotion ? {} : { y:-9 }} className={`game-plan game-plan--${meta.color} ${i===1?'is-featured':''}`}>
+          {products.slice(0,3).map((product,i) => { const meta=planMeta[product.id as keyof typeof planMeta] || { tag:'Stok terbaru', note:'Pilihan Cookie terbaru', color:product.accent }; return <motion.article key={product.id} variants={reveal} whileHover={reduceMotion ? {} : { y:-9 }} className={`game-plan game-plan--${meta.color} ${i===1?'is-featured':''}`}>
             {i===1&&<div className="plan-corner"><Sparkles/> MOST CHOSEN</div>}<div className="plan-top"><span className="plan-glyph">{product.icon}</span><span><small>{meta.tag}</small><b>{product.name}</b></span></div><p>{meta.note}</p><div className="plan-price"><strong>{rupiah(product.price)}</strong><small>/ cookie</small></div><ul>{product.specs.map(spec=><li key={spec}><Check/> {spec}</li>)}</ul><Link to={`/product/${product.id}`} className={`btn ${i===1?'btn--primary':'btn--secondary'}`}>Pilih {product.name.replace('Cookie ','')} <ArrowRight/></Link><div className="plan-beam" /></motion.article>})}
         </motion.div>
         <p className="plans-footnote"><ShieldCheck/> Cookie diperiksa real-time dan hanya tersedia melalui delivery privat.</p>

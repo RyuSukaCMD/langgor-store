@@ -1,13 +1,11 @@
 import { BadgeCheck, Camera, Check, Cookie, Image, MapPin, Save, ShieldCheck, Upload, UserRound } from 'lucide-react'
 import { FormEvent, useMemo, useState, type CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ProductCard } from '../components/ProductCard'
 import { PublicHeader } from '../components/PublicHeader'
 import { Button, Input } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { api, uploadProfileImage } from '../lib/api'
-import { products } from '../data'
 
 const accents = ['#8b5cf6','#ec4899','#22d3ee','#f59e0b']
 
