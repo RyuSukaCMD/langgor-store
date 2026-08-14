@@ -49,8 +49,6 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   const set = (key: string, value: string | boolean) => setForm(v => ({ ...v, [key]: value }))
   const blur = (key: string) => setTouched(v => ({ ...v, [key]: true }))
-  const fillDemo = (role: 'user' | 'admin') => setForm(v => ({ ...v, identifier: role === 'admin' ? 'admin@langgor.store' : 'raka@langgor.store', password: 'Langgor123!' }))
-
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (Object.keys(errors).length) { setTouched({ username: true, email: true, password: true, confirm: true }); return }
@@ -62,14 +60,15 @@ export function AuthPage({ mode }: { mode: Mode }) {
         const target = (location.state as { from?: string })?.from || (user.role === 'admin' ? '/admin' : '/dashboard')
         navigate(target)
       } else if (mode === 'register') {
-        await register({ username: form.username, email: form.email, password: form.password })
-        showToast({ tone: 'success', title: 'Akun berhasil dibuat', message: 'Selamat datang di Langgor Store.' })
-        navigate('/dashboard')
+        const registeredUser = await register({ username: form.username, email: form.email, password: form.password })
+        if (registeredUser) { showToast({ tone: 'success', title: 'Akun berhasil dibuat', message: 'Selamat datang di Langgor Store.' }); navigate('/dashboard') }
+        else { showToast({ tone: 'info', title: 'Konfirmasi email diperlukan', message: 'Periksa inbox, konfirmasi email, lalu masuk ke akunmu.' }); navigate('/login') }
       } else if (mode === 'forgot') {
         await api('/auth/forgot', { method: 'POST', body: JSON.stringify({ email: form.email }) })
         setSent(true)
       } else {
-        await new Promise(resolve => setTimeout(resolve, 900)); setSent(true)
+        const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,''));const queryParams=new URLSearchParams(window.location.search);const accessToken=hashParams.get('access_token')||queryParams.get('access_token')||''
+        await api('/auth/reset',{method:'POST',body:JSON.stringify({accessToken,password:form.password})});setSent(true)
       }
     } catch (error) { showToast({ tone: 'error', title: 'Belum berhasil', message: error instanceof Error ? error.message : 'Silakan coba lagi.' }) }
     finally { setLoading(false) }
@@ -86,7 +85,6 @@ export function AuthPage({ mode }: { mode: Mode }) {
         {(mode === 'forgot' || mode === 'reset') && <Link to="/login" className="back-link"><ArrowLeft /> Kembali ke login</Link>}
         {!sent ? <>
           <div className="auth-title"><span className="eyebrow">{mode === 'login' ? 'WELCOME BACK' : mode === 'register' ? 'NEW SPACE' : 'ACCOUNT RECOVERY'}</span><h1>{title}</h1><p>{subtitle}</p></div>
-          {mode === 'login' && <div className="demo-accounts"><span>Coba akun demo:</span><button type="button" onClick={() => fillDemo('user')}>User</button><button type="button" onClick={() => fillDemo('admin')}>Admin</button></div>}
           <form className="auth-form" onSubmit={submit} noValidate>
             {mode === 'login' && <Input label="Email atau username" name="identifier" icon={<AtSign />} placeholder="contoh@langgor.store" autoComplete="username" required value={form.identifier} onChange={e => set('identifier', e.target.value)} />}
             {mode === 'register' && <>

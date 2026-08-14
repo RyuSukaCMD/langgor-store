@@ -24,6 +24,7 @@ export function ProductDetailPage() {
   const [payment, setPayment] = useState('balance')
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState('')
+  const [orderStatus,setOrderStatus]=useState('pending')
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -40,9 +41,8 @@ export function ProductDetailPage() {
     if (step === 'payment') {
       setLoading(true)
       try {
-        const result = await api<{ orderId: string }>('/orders', { method: 'POST', body: JSON.stringify({ productId: product.id, paymentMethod: payment }) })
-        setOrderId(result.orderId); setStep('processing')
-        window.setTimeout(() => setStep('completed'), 1600)
+        const result = await api<{ orderId: string;status:string }>('/orders', { method: 'POST', body: JSON.stringify({ productId: product.id, paymentMethod: payment }) })
+        setOrderId(result.orderId);setOrderStatus(result.status);setStep('completed')
       } catch (error) { showToast({ tone: 'error', title: 'Transaksi belum dibuat', message: error instanceof Error ? error.message : 'Coba lagi.' }) }
       finally { setLoading(false) }
     }
@@ -64,7 +64,7 @@ export function ProductDetailPage() {
           <div className="detail-rating"><span><Star/> {product.rating}</span><i/> <span>{product.sold} terjual</span><i/> <span>Listing {new Date(product.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })}</span></div>
           <p className="detail-description">{product.description}</p>
           <div className="detail-price"><small>Harga produk</small><strong>{rupiah(product.price)}</strong><span>Sudah termasuk biaya layanan</span></div>
-          <div className="seller-box"><span className="seller-avatar">LS</span><div><small>DISEDIAKAN OLEH</small><strong>Langgor Store <BadgeCheck/></strong><span>Official store • server verified</span></div><a href="/#keamanan">Lihat validasi</a></div>
+          <div className="seller-box"><span className="seller-avatar">{product.seller.name.slice(0,2).toUpperCase()}</span><div><small>DISEDIAKAN OLEH</small><strong>{product.seller.name} {product.seller.verified&&<BadgeCheck/>}</strong><span>@{product.seller.username} • {product.seller.rating} rating</span></div><a href="/#keamanan">Lihat validasi</a></div>
           <div className="detail-actions"><Button onClick={start} disabled={product.status === 'sold'}><ShoppingBag/> {product.status === 'sold' ? 'Stok habis' : 'Beli sekarang'}</Button><button className={`like-btn ${liked ? 'active' : ''}`} onClick={() => setLiked(v => !v)} aria-label="Simpan produk"><Heart fill={liked ? 'currentColor' : 'none'}/></button></div>
           <div className="detail-assurance"><span><ShieldCheck/><b>Server verified</b><small>Status bukan dari frontend</small></span><span><LockKeyhole/><b>Cookie privat</b><small>Token mentah tidak ditampilkan</small></span><span><Clock3/><b>Aktivasi cepat</b><small>Rata-rata 12 detik</small></span></div>
         </div>
@@ -82,7 +82,7 @@ export function ProductDetailPage() {
       {step === 'confirm' && <div className="checkout-confirm"><div className="checkout-product"><span className={`checkout-product__icon ${product.accent}`}>{product.icon}</span><span><small>{product.category}</small><strong>{product.name}</strong><em>{product.seller.name}</em></span><b>{rupiah(product.price)}</b></div><div className="checkout-totals"><span><span>Harga produk</span><b>{rupiah(product.price)}</b></span><span><span>Biaya layanan</span><b>Rp0</b></span><span><strong>Total bayar</strong><strong>{rupiah(product.price)}</strong></span></div><label className="confirm-check"><input type="checkbox" defaultChecked/><span><Check/></span><p>Saya sudah memeriksa deskripsi, spesifikasi, dan ketentuan produk.</p></label></div>}
       {step === 'payment' && <div className="payment-options"><button className={payment === 'balance' ? 'active' : ''} onClick={() => setPayment('balance')}><span><WalletCards/><span><strong>Langgor Balance</strong><small>Saldo {rupiah(user?.balance || 0)}</small></span></span>{payment === 'balance' && <Check/>}</button><button className={payment === 'bank' ? 'active' : ''} onClick={() => setPayment('bank')}><span><CreditCard/><span><strong>Virtual Account</strong><small>BCA, BNI, Mandiri, Permata</small></span></span>{payment === 'bank' && <Check/>}</button><button className={payment === 'ewallet' ? 'active' : ''} onClick={() => setPayment('ewallet')}><span><Banknote/><span><strong>E-wallet</strong><small>QRIS dan dompet digital</small></span></span>{payment === 'ewallet' && <Check/>}</button><div className="payment-info"><Info/> Nominal final diverifikasi oleh server. Langgor tidak menerima status sukses dari tampilan frontend saja.</div></div>}
       {step === 'processing' && <div className="processing-state"><div className="processing-ring"><span/><Fingerprint/></div><h3>Jangan tutup halaman ini</h3><p>Kami sedang mencocokkan nominal dan status pembayaran dari server.</p><div className="processing-steps"><span className="done"><Check/> Pesanan dibuat</span><span className="active"><i/> Verifikasi pembayaran</span><span><i/> Siapkan delivery</span></div></div>}
-      {step === 'completed' && <div className="checkout-success"><span className="success-mark"><Check/></span><p>Order <button onClick={() => navigator.clipboard?.writeText(orderId)}>{orderId} <Copy/></button> tercatat. Status berikutnya akan dikirim lewat notifikasi.</p><div className="checkout-success__summary"><span><small>PRODUK</small><strong>{product.name}</strong></span><span><small>TOTAL</small><strong>{rupiah(product.price)}</strong></span><span><small>STATUS</small><StatusBadge status="processing"/></span></div></div>}
+      {step === 'completed' && <div className="checkout-success"><span className="success-mark"><Check/></span><p>Order <button onClick={() => navigator.clipboard?.writeText(orderId)}>{orderId} <Copy/></button> tercatat. Status berikutnya akan dikirim lewat notifikasi.</p><div className="checkout-success__summary"><span><small>PRODUK</small><strong>{product.name}</strong></span><span><small>TOTAL</small><strong>{rupiah(product.price)}</strong></span><span><small>STATUS</small><StatusBadge status={orderStatus}/></span></div></div>}
     </Modal>
   </div>
 }

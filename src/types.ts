@@ -30,14 +30,17 @@ export interface User {
   bio: string
   joinedAt: string
   accent: string
-  seller: boolean
+  avatarUrl?: string
+  bannerUrl?: string
 }
 
 export interface Order {
   id: string
+  productId: string
   productName: string
   productIcon: string
   date: string
+  createdAt: string
   price: number
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded'
 }
@@ -48,5 +51,6 @@ export interface Notification {
   title: string
   message: string
   time: string
+  createdAt: string
   read: boolean
 }

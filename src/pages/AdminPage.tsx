@@ -7,21 +7,22 @@ import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { useToast } from '../context/ToastContext'
-import { recentOrders, rupiah } from '../data'
+import { rupiah } from '../data'
 import { api } from '../lib/api'
-import type { Product, ProductStatus } from '../types'
+import type { Order, Product, ProductStatus } from '../types'
 import './admin-redesign.css'
 
 type AdminTab = 'overview' | 'products' | 'users' | 'orders'
 type ManagedUser = { id:string;username:string;email:string;nickname:string;role:'user'|'moderator'|'admin';status:'active'|'suspended';balance:number;joinedAt:string;avatar:string }
 type ProductForm = { name:string;category:string;description:string;price:string;stock:string;status:ProductStatus;specs:string;icon:string;accent:Product['accent'] }
 
-const emptyProduct:ProductForm={name:'',category:'Normal Cookie',description:'',price:'',stock:'1',status:'ready',specs:'1 Cookie login\nPemeriksaan real-time\nPengiriman otomatis',icon:'C',accent:'violet'}
+const emptyProduct:ProductForm={name:'',category:'',description:'',price:'',stock:'0',status:'ready',specs:'',icon:'',accent:'violet'}
 const panelMotion={initial:{opacity:0,y:10},animate:{opacity:1,y:0},exit:{opacity:0,y:-6}}
 
 export function AdminPage() {
   const [tab,setTab]=useState<AdminTab>('overview')
   const [users,setUsers]=useState<ManagedUser[]>([])
+  const [orders,setOrders]=useState<Order[]>([])
   const [query,setQuery]=useState('')
   const [loadingUsers,setLoadingUsers]=useState(true)
   const [busyUser,setBusyUser]=useState('')
@@ -31,7 +32,7 @@ export function AdminPage() {
   const [savingProduct,setSavingProduct]=useState(false)
   const [deleteProduct,setDeleteProduct]=useState<Product|null>(null)
   const [deleting,setDeleting]=useState(false)
-  const { products,refreshProducts }=useProducts()
+  const { products,loading:productsLoading,error:productsError,refreshProducts }=useProducts()
   const { user:currentUser }=useAuth()
   const { showToast }=useToast()
   const reduceMotion=useReducedMotion()
@@ -42,12 +43,13 @@ export function AdminPage() {
     catch(error){showToast({tone:'error',title:'Pengguna gagal dimuat',message:error instanceof Error?error.message:'Coba lagi.'})}
     finally{setLoadingUsers(false)}
   },[showToast])
-  useEffect(()=>{void loadUsers()},[loadUsers])
+  const loadOrders=useCallback(async()=>{try{const result=await api<{orders:Order[]}>('/admin/orders');setOrders(result.orders)}catch(error){showToast({tone:'error',title:'Transaksi gagal dimuat',message:error instanceof Error?error.message:'Coba lagi.'})}},[showToast])
+  useEffect(()=>{void loadUsers();void loadOrders()},[loadUsers,loadOrders])
 
   const filteredUsers=useMemo(()=>users.filter(item=>(item.nickname+item.username+item.email).toLowerCase().includes(query.toLowerCase())),[users,query])
   const activeUsers=users.filter(item=>item.status==='active').length
   const totalStock=products.reduce((sum,item)=>sum+item.stock,0)
-  const revenue=recentOrders.reduce((sum,item)=>sum+item.price,0)
+  const revenue=orders.reduce((sum,item)=>sum+item.price,0)
 
   const openCreate=()=>{setEditingId(null);setProductForm(emptyProduct);setProductOpen(true)}
   const openEdit=(product:Product)=>{setEditingId(product.id);setProductForm({name:product.name,category:product.category,description:product.description,price:String(product.price),stock:String(product.stock),status:product.status,specs:product.specs.join('\n'),icon:product.icon,accent:product.accent});setProductOpen(true)}
@@ -71,7 +73,7 @@ export function AdminPage() {
     finally{setDeleting(false)}
   }
 
-  const updateUser=async(id:string,change:{role?:ManagedUser['role'];suspended?:boolean})=>{
+  const updateUser=async(id:string,change:{role?:ManagedUser['role'];status?:ManagedUser['status']})=>{
     setBusyUser(id)
     try{await api(`/admin/users/${id}`,{method:'PATCH',body:JSON.stringify(change)});await loadUsers();showToast({tone:'success',title:'Akses pengguna diperbarui',message:'Perubahan role/status sudah tercatat di audit log.'})}
     catch(error){showToast({tone:'error',title:'Perubahan ditolak',message:error instanceof Error?error.message:'Coba lagi.'})}
@@ -89,12 +91,12 @@ export function AdminPage() {
       <section className="admin-metrics admin-v2__metrics">
         <article><span className="admin-metric__icon violet"><Cookie/></span><span><small>PRODUK AKTIF</small><strong>{products.length}</strong><em>{totalStock} stok</em></span></article>
         <article><span className="admin-metric__icon cyan"><Users/></span><span><small>PENGGUNA AKTIF</small><strong>{activeUsers}</strong><em>{users.length} total</em></span></article>
-        <article><span className="admin-metric__icon pink"><ShoppingBag/></span><span><small>ORDER TERBARU</small><strong>{recentOrders.length}</strong><em>Demo data</em></span></article>
+        <article><span className="admin-metric__icon pink"><ShoppingBag/></span><span><small>ORDER TERBARU</small><strong>{orders.length}</strong><em>Supabase</em></span></article>
         <article><span className="admin-metric__icon amber"><CircleDollarSign/></span><span><small>ORDER VALUE</small><strong>{rupiah(revenue)}</strong><em>Riwayat tampil</em></span></article>
       </section>
       <section className="admin-v2__overview">
         <article className="admin-v2__quick"><div className="card-heading"><div><span className="eyebrow">QUICK CONTROL</span><h2>Yang sering dibutuhkan</h2></div></div><div><button onClick={openCreate}><span><Plus/></span><b>Tambah produk</b><small>Buat Cookie baru</small><ArrowRight/></button><button onClick={()=>setTab('users')}><span><UserCog/></span><b>Atur role</b><small>User, moderator, admin</small><ArrowRight/></button><button onClick={()=>setTab('products')}><span><Package/></span><b>Kelola stok</b><small>Harga dan availability</small><ArrowRight/></button></div></article>
-        <article className="admin-v2__activity"><div className="card-heading"><div><span className="eyebrow">SYSTEM SNAPSHOT</span><h2>Katalog dalam kondisi normal.</h2></div><Badge tone="success">Live</Badge></div><div className="admin-v2__health"><span><i/><b>Public catalog API</b><small>Connected</small></span><span><i/><b>Role authorization</b><small>Backend enforced</small></span><span><i/><b>Audit actions</b><small>Recording</small></span></div></article>
+        <article className="admin-v2__activity"><div className="card-heading"><div><span className="eyebrow">SYSTEM SNAPSHOT</span><h2>{productsError?'Katalog perlu diperiksa.':productsLoading?'Menghubungkan Supabase…':'Katalog dalam kondisi normal.'}</h2></div><Badge tone={productsError?'error':productsLoading?'warning':'success'}>{productsError?'Error':productsLoading?'Loading':'Live'}</Badge></div><div className="admin-v2__health"><span><i/><b>Public catalog API</b><small>Connected</small></span><span><i/><b>Role authorization</b><small>Backend enforced</small></span><span><i/><b>Audit actions</b><small>Recording</small></span></div></article>
       </section>
     </m.div>}
 
@@ -105,12 +107,12 @@ export function AdminPage() {
 
     {tab==='users'&&<m.section {...panelMotion} className="admin-v2__data">
       <div className="admin-v2__data-head"><div><span className="eyebrow">USER & ROLE MANAGEMENT</span><h2>Pengguna dan akses</h2><p>Role disimpan oleh backend, bukan hanya disembunyikan dari UI.</p></div><div className="admin-v2__search"><Search/><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Cari nama, username, email…"/><button onClick={()=>void loadUsers()} aria-label="Muat ulang"><RefreshCw className={loadingUsers?'spin':''}/></button></div></div>
-      <div className="admin-user-list">{filteredUsers.map(item=><article key={item.id}><span className="admin-user-avatar">{item.avatar}</span><div><strong>{item.nickname}</strong><span>@{item.username}</span><small>{item.email}</small></div><label><small>ROLE</small><select value={item.role} disabled={busyUser===item.id||item.id===currentUser?.id} onChange={event=>void updateUser(item.id,{role:event.target.value as ManagedUser['role']})}><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select></label><span className="admin-user-status"><Badge tone={item.status==='active'?'success':'error'}>{item.status==='active'?'Aktif':'Ditangguhkan'}</Badge></span><Button variant={item.status==='active'?'ghost':'secondary'} loading={busyUser===item.id} disabled={item.id===currentUser?.id} onClick={()=>void updateUser(item.id,{suspended:item.status==='active'})}>{item.status==='active'?'Tangguhkan':'Pulihkan'}</Button></article>)}</div>
+      <div className="admin-user-list">{filteredUsers.map(item=><article key={item.id}><span className="admin-user-avatar">{item.avatar}</span><div><strong>{item.nickname}</strong><span>@{item.username}</span><small>{item.email}</small></div><label><small>ROLE</small><select value={item.role} disabled={busyUser===item.id||item.id===currentUser?.id} onChange={event=>void updateUser(item.id,{role:event.target.value as ManagedUser['role']})}><option value="user">User</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select></label><span className="admin-user-status"><Badge tone={item.status==='active'?'success':'error'}>{item.status==='active'?'Aktif':'Ditangguhkan'}</Badge></span><Button variant={item.status==='active'?'ghost':'secondary'} loading={busyUser===item.id} disabled={item.id===currentUser?.id} onClick={()=>void updateUser(item.id,{status:item.status==='active'?'suspended':'active'})}>{item.status==='active'?'Tangguhkan':'Pulihkan'}</Button></article>)}</div>
     </m.section>}
 
     {tab==='orders'&&<m.section {...panelMotion} className="admin-v2__data">
       <div className="admin-v2__data-head"><div><span className="eyebrow">TRANSACTION CONTROL</span><h2>Transaksi terbaru</h2><p>Nominal checkout berasal dari katalog server.</p></div></div>
-      <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Produk</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th></th></tr></thead><tbody>{recentOrders.map(order=><tr key={order.id}><td><strong>{order.id}</strong></td><td>{order.productName}</td><td>{order.date}</td><td><strong>{rupiah(order.price)}</strong></td><td><StatusBadge status={order.status}/></td><td><button className="icon-btn icon-btn--sm"><Eye/></button></td></tr>)}</tbody></table></div>
+      <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Produk</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th></th></tr></thead><tbody>{orders.map(order=><tr key={order.id}><td><strong>{order.id}</strong></td><td>{order.productName}</td><td>{order.date}</td><td><strong>{rupiah(order.price)}</strong></td><td><StatusBadge status={order.status}/></td><td><button className="icon-btn icon-btn--sm"><Eye/></button></td></tr>)}</tbody></table></div>
     </m.section>}
 
     <Modal open={productOpen} onClose={()=>!savingProduct&&setProductOpen(false)} eyebrow={editingId?'PRODUCT / EDIT':'PRODUCT / NEW'} title={editingId?'Edit produk':'Tambah produk'} footer={<><Button variant="secondary" onClick={()=>setProductOpen(false)} disabled={savingProduct}>Batal</Button><Button type="submit" form="admin-product-form" loading={savingProduct}>{editingId?'Simpan perubahan':'Tambah produk'}</Button></>}>

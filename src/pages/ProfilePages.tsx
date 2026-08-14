@@ -1,11 +1,12 @@
-import { BadgeCheck, Camera, Check, Cookie, Image, MapPin, Save, ShieldCheck, Upload, UserRound } from 'lucide-react'
-import { FormEvent, useMemo, useState, type CSSProperties } from 'react'
+import { BadgeCheck, Camera, Check, Cookie, Image, Save, ShieldCheck, Upload, UserRound } from 'lucide-react'
+import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
 import { Button, Input } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { api, uploadProfileImage } from '../lib/api'
+import type { User } from '../types'
 
 const accents = ['#8b5cf6','#ec4899','#22d3ee','#f59e0b']
 
@@ -42,8 +43,8 @@ export function ProfilePage() {
     e.preventDefault(); if (usernameError) return; setLoading(true)
     try {
       await Promise.all([avatarFile ? uploadProfileImage(avatarFile, 'avatar') : Promise.resolve(null), bannerFile ? uploadProfileImage(bannerFile, 'banner') : Promise.resolve(null)])
-      await api('/profile', { method: 'PATCH', body: JSON.stringify(form) })
-      updateUser(form); showToast({ tone: 'success', title: 'Profil disimpan', message: 'Identitas dan gambar publikmu sudah diperbarui.' })
+      const result=await api<{user:User}>('/profile', { method: 'PATCH', body: JSON.stringify(form) })
+      updateUser(result.user); showToast({ tone: 'success', title: 'Profil disimpan', message: 'Identitas dan gambar publikmu sudah diperbarui.' })
     } catch (error) { showToast({ tone: 'error', title: 'Profil belum disimpan', message: error instanceof Error ? error.message : 'Coba lagi.' }) }
     finally { setLoading(false) }
   }
@@ -67,10 +68,16 @@ export function ProfilePage() {
 
 export function PublicProfilePage() {
   const { username } = useParams()
-  const name = username === 'raka_sore' ? 'Raka Aditya' : username?.replace(/_/g,' ') || 'Member Langgor'
+  const [profile,setProfile]=useState<{username:string;nickname:string;bio:string;avatarUrl?:string;bannerUrl?:string;accent?:string;joinedAt:string}|null>(null)
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  useEffect(()=>{setLoading(true);api<{profile:typeof profile}>(`/users/${username}/public`).then(result=>setProfile(result.profile)).catch(reason=>setError(reason instanceof Error?reason.message:'Profil tidak ditemukan.')).finally(()=>setLoading(false))},[username])
+  if(loading)return <div className="route-loader">Memuat profil dari Supabase…</div>
+  if(error||!profile)return <div className="public-profile-page"><PublicHeader/><main className="not-found"><h1>Profil tidak tersedia.</h1><p>{error}</p></main></div>
+  const initials=profile.nickname.split(/\s+/).map(part=>part[0]).slice(0,2).join('').toUpperCase()
+  const joined=new Date(profile.joinedAt).toLocaleDateString('id-ID',{month:'long',year:'numeric'})
   return <div className="public-profile-page"><PublicHeader/><main className="container public-profile-main">
-    <section className="public-profile-hero"><div className="public-profile-banner"><span/><i/></div><div className="public-profile-info"><span className="avatar avatar--xxl">{name.slice(0,2).toUpperCase()}</span><div><h1>{name} <BadgeCheck/></h1><span>@{username}</span><p>Member Langgor Store dengan akun terverifikasi.</p><div className="profile-chips"><span><MapPin/> Indonesia</span><span><ShieldCheck/> Verified member</span><span><Cookie/> Cookie Store</span></div></div><button className="btn btn--secondary">Ikuti</button></div></section>
-    <section className="public-profile-stats"><span><strong>18</strong><small>Transaksi selesai</small></span><span><strong>2025</strong><small>Bergabung</small></span><span><strong>100%</strong><small>Akun terverifikasi</small></span><span><strong>Private</strong><small>Riwayat order</small></span></section>
+    <section className="public-profile-hero"><div className="public-profile-banner" style={profile.bannerUrl?{backgroundImage:`url(${profile.bannerUrl})`}:undefined}><span/><i/></div><div className="public-profile-info"><span className="avatar avatar--xxl" style={profile.avatarUrl?{backgroundImage:`url(${profile.avatarUrl})`}:undefined}>{profile.avatarUrl?'':initials}</span><div><h1>{profile.nickname} <BadgeCheck/></h1><span>@{profile.username}</span><p>{profile.bio}</p><div className="profile-chips"><span><ShieldCheck/> Verified member</span><span><Cookie/> Cookie Store</span><span>Bergabung {joined}</span></div></div></div></section>
     <section className="profile-listings"><div className="section-head"><div><span className="eyebrow">PRIVACY STATUS</span><h2>Aktivitas bersifat privat.</h2><p>Informasi Cookie dan detail pembelian tidak ditampilkan pada profil publik.</p></div></div><div className="profile-placeholder"><ShieldCheck/><h3>Order details are private.</h3><p>Hanya pemilik akun yang dapat melihat delivery dan riwayat transaksi.</p></div></section>
   </main></div>
 }

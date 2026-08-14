@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Cookie, Home, PackageSearch, SearchX, ShieldChec
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Logo } from '../components/Logo'
+import { useProducts } from '../context/ProductContext'
 import './not-found.css'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: .08, delayChildren: .18 } } }
@@ -11,6 +12,7 @@ const item = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }
 
 export function NotFoundPage() {
   const reduceMotion = useReducedMotion()
+  const {products}=useProducts()
   const location = useLocation()
   const route = location.pathname.length > 36 ? `${location.pathname.slice(0, 36)}…` : location.pathname
   useEffect(() => {
@@ -60,7 +62,7 @@ export function NotFoundPage() {
         </section>
       </div>
 
-      <div className="cookie-404__rail"><div><span>404 • PAGE NOT FOUND</span><b>COOKIE BASIC READY</b><span>VALIDATION SYSTEM NORMAL</span><b>COOKIE PREMKUM READY</b><span>404 • PAGE NOT FOUND</span><b>COOKIE ULTRA LIMITED</b><span>VALIDATION SYSTEM NORMAL</span></div></div>
+      <div className="cookie-404__rail"><div>{products.length?[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}>{product.name.toUpperCase()} • {product.status.toUpperCase()} • {product.stock} STOK</span>):<><span>404 • PAGE NOT FOUND</span><b>KATALOG TIDAK TERSEDIA</b><span>SUPABASE CONNECTION REQUIRED</span></>}</div></div>
     </main>
   </LazyMotion>
 }

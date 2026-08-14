@@ -1,39 +1,56 @@
 # Langgor Store
 
-Full-stack Cookie login store dengan tiga produk: Cookie Basic, Cookie Premkum, dan Cookie Ultra. Stok diperiksa real-time sebelum delivery otomatis.
+Full-stack Cookie login store dengan Supabase sebagai satu-satunya source of truth untuk authentication, profil, produk, stok, order, notifikasi, role, dan audit log.
 
-## Menjalankan
+## Setup
 
 ```bash
 npm install
 cp .env.example .env
+```
+
+Isi konfigurasi dari **Supabase → Project Settings → API**:
+
+```env
+SUPABASE_URL=https://PROJECT_REF.supabase.co
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_STORAGE_BUCKET=langgor-media
+```
+
+Service-role key hanya boleh berada di server dan tidak boleh memakai prefix `VITE_`.
+
+1. Buka Supabase SQL Editor.
+2. Jalankan seluruh isi `server/schema.sql`.
+3. Daftar melalui `/register`.
+4. Jadikan akun pertama sebagai admin:
+
+```sql
+UPDATE public.users SET role = 'admin' WHERE email = 'alamat-admin@domain.com';
+```
+
+5. Jalankan aplikasi:
+
+```bash
 npm run dev
 ```
 
-`.env` lokal sudah di-ignore oleh Git. Isi `SUPABASE_URL`, `SUPABASE_ANON_KEY`, dan `SUPABASE_SERVICE_ROLE_KEY` dari **Supabase → Project Settings → API**. Service-role key hanya boleh digunakan server dan tidak boleh diberi prefix `VITE_`.
-
-Untuk deployment multi-instance, gunakan rate limiter Redis:
-
-```env
-RATE_LIMIT_STORE=redis
-REDIS_URL=rediss://default:password@host:6379
-```
-
-Konfigurasi environment divalidasi saat server mulai. Server akan berhenti dengan pesan yang jelas bila kombinasi variabel tidak aman atau tidak lengkap.
-
-Aplikasi berjalan di `http://localhost:5173`. Build produksi:
+Build produksi:
 
 ```bash
 npm run build
 NODE_ENV=production npm run preview
 ```
 
-## Akun demo
+## Data architecture
 
-| Role | Login | Password |
-|---|---|---|
-| Member | `raka@langgor.store` | `Langgor123!` |
-| Admin | `admin@langgor.store` | `Langgor123!` |
+Tidak ada fallback produk, user, order, atau notifikasi hardcoded di application runtime. Jika Supabase belum dikonfigurasi, API mengembalikan status konfigurasi dan UI menampilkan loading/error/empty state.
+
+- **Supabase Auth**: register, login, recovery, refresh token.
+- **PostgreSQL**: users, profiles, products, orders, payments, inventory, deliveries, notifications, admin actions.
+- **Supabase Storage**: avatar dan banner tervalidasi server.
+- **Database function**: checkout mengunci product row, membaca harga server, memeriksa stok/saldo, dan membuat order secara atomik.
+- **RLS**: ownership policy untuk profil, order, pembayaran, delivery, dan notifikasi.
 
 ## Route utama
 
@@ -45,47 +62,48 @@ NODE_ENV=production npm run preview
 ## Struktur
 
 ```text
+api/[...path].ts   Vercel Express function
 src/
-  components/      shared UI, navigation, cards, guards
-  context/         auth and toast state
-  lib/             API client and helpers
-  pages/           public, auth, dashboard, and admin pages
+  components/      shared UI and navigation
+  context/         auth, products, toast
+  lib/             API client
+  pages/           public, auth, dashboard, admin
 server/
-  index.ts         Express API, auth, RBAC, CSRF, validation
-  schema.sql       production PostgreSQL relational schema
+  app.ts           API, Supabase Auth, RBAC, validation
+  index.ts         local/standalone server entry
+  supabase.ts      isolated admin/auth clients
+  schema.sql       PostgreSQL, RLS, trigger, RPC, storage
 ```
 
 ## Admin panel
 
-Route `/admin` dilindungi client guard dan backend RBAC. Admin dapat menambah, mengedit, serta menghapus produk; mengubah harga, stok, status, aksen, dan spesifikasi; mengganti role pengguna (`user`, `moderator`, `admin`); serta suspend/restore akun. Katalog publik mengambil data dari endpoint `/api/products`, sehingga perubahan admin langsung tercermin di store. `api/[...path].ts` menyediakan Express API catch-all untuk Vercel, sedangkan session cookie menggunakan payload bertanda tangan HMAC agar authorization tetap dapat diverifikasi pada runtime serverless.
+Route `/admin` dilindungi client guard dan backend RBAC. Semua operasi berikut menulis langsung ke Supabase:
 
-## Security yang sudah diterapkan
+- tambah, edit, dan hapus produk;
+- harga, stok, status, spesifikasi, ikon, dan aksen;
+- role `user`, `moderator`, `admin`;
+- suspend/restore akun;
+- transaksi dan audit action.
 
-- Password demo di-hash dengan bcrypt; password tidak pernah dikembalikan oleh API.
-- Session ID acak 256-bit dalam cookie `HttpOnly`, `SameSite=Lax`, dan `Secure` pada production.
-- Double-submit CSRF token untuk semua mutation.
-- Rate limiting pada login/register/recovery.
-- Zod validation di semua endpoint mutation.
-- Backend RBAC untuk user dan admin.
-- Hanya tiga package ID resmi yang dapat diproses oleh endpoint checkout.
-- Harga checkout dihitung ulang di server; client tidak dapat menentukan nominal.
-- Admin action memiliki audit record.
-- Upload profil memeriksa size limit, magic bytes, format, dimensi, rasio banner, nama file acak, dan tidak menerima SVG.
-- Helmet headers, body limits, output error yang tidak mengekspos stack trace.
-- Tidak ada credential sensitif di payload listing publik.
+## Security
 
-## Catatan deployment
+- Password dikelola Supabase Auth dan tidak disimpan di application database.
+- Access/refresh token disimpan pada cookie `HttpOnly`, `Secure` pada production.
+- Double-submit CSRF untuk seluruh mutation.
+- Rate limiting authentication, API, dan upload; Redis didukung untuk multi-instance.
+- Zod server-side validation.
+- Backend RBAC dan proteksi admin agar tidak menurunkan/suspend dirinya sendiri.
+- Harga dan stok checkout dibaca dalam transaksi database, bukan dari client.
+- Upload memeriksa MIME, magic bytes, ukuran, dimensi, serta rasio banner sebelum masuk Supabase Storage.
+- Admin action disimpan pada audit log dengan IP hash.
+- Payload Cookie tidak pernah dikirim dari endpoint list, notifikasi, atau admin table.
 
-Runtime demo memakai repository data in-memory supaya project langsung dapat dicoba tanpa secret atau layanan eksternal. Sebelum menerima transaksi nyata:
+Untuk rate limit production multi-instance:
 
-1. Implementasikan repository PostgreSQL dari `server/schema.sql` dan migration tool.
-2. Simpan session pada Redis/PostgreSQL dengan rotasi dan revocation.
-3. Gunakan object storage private untuk upload/delivery serta antivirus scanning.
-4. Envelope-encrypt payload delivery dengan KMS; jangan menyimpan password/token plaintext.
-5. Hubungkan payment provider resmi. Verifikasi signature webhook dan gunakan idempotency key + row lock.
-6. Tambahkan email provider, background queue, observability, backup, dan secret manager.
-7. Set `NODE_ENV=production`, TLS, trusted proxy, CSP sesuai domain, dan origin allowlist.
-8. Jalankan integration/E2E tests terhadap database dan payment sandbox sebelum go-live.
+```env
+RATE_LIMIT_STORE=redis
+REDIS_URL=rediss://default:password@host:6379
+```
 
 ## Quality checks
 
@@ -93,5 +111,3 @@ Runtime demo memakai repository data in-memory supaya project langsung dapat dic
 npm run build
 npm audit --omit=dev
 ```
-
-UI menghormati `prefers-reduced-motion`, menggunakan semantic controls, visible focus, accessible modal/dropdown feedback, mobile filter drawer, skeleton, empty, loading, success, dan error states.

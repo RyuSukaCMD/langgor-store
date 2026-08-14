@@ -1,27 +1,30 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { products as seedProducts } from '../data'
 import { api } from '../lib/api'
 import type { Product } from '../types'
 
 type ProductContextValue = {
   products: Product[]
   loading: boolean
+  error: string
   refreshProducts: () => Promise<void>
 }
 
 const ProductContext = createContext<ProductContextValue | null>(null)
 
 export function ProductProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(seedProducts)
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const refreshProducts = useCallback(async () => {
+    setLoading(true)
+    setError('')
     try {
       const result = await api<{ products: Product[] }>('/products')
       setProducts(result.products)
-    } catch {
-      // Keep the bundled catalog as a resilient read-only fallback.
-      setProducts(current => current.length ? current : seedProducts)
+    } catch (reason) {
+      setProducts([])
+      setError(reason instanceof Error ? reason.message : 'Katalog tidak dapat dimuat.')
     } finally {
       setLoading(false)
     }
@@ -29,7 +32,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { void refreshProducts() }, [refreshProducts])
 
-  return <ProductContext.Provider value={{ products, loading, refreshProducts }}>{children}</ProductContext.Provider>
+  return <ProductContext.Provider value={{ products, loading, error, refreshProducts }}>{children}</ProductContext.Provider>
 }
 
 export function useProducts() {

@@ -12,7 +12,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
     "@vitejs/plugin-react": "latest",
-    "bcryptjs": "latest",
     "compression": "latest",
     "cookie-parser": "latest",
     "dotenv": "^17.4.2",
@@ -32,7 +31,6 @@
   },
   "devDependencies": {
     "@eslint/js": "latest",
-    "@types/bcryptjs": "latest",
     "@types/compression": "latest",
     "@types/cookie-parser": "latest",
     "@types/express": "latest",

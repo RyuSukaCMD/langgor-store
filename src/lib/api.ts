@@ -1,4 +1,5 @@
-const csrf = () => document.cookie.split('; ').find(v => v.startsWith('langgor_csrf='))?.split('=')[1] || ''
+const csrfCookieName = import.meta.env.VITE_CSRF_COOKIE_NAME || 'langgor_csrf'
+const csrf = () => document.cookie.split('; ').find(value => value.startsWith(`${csrfCookieName}=`))?.split('=')[1] || ''
 
 export async function uploadProfileImage(file: File, kind: 'avatar' | 'banner') {
   const response = await fetch(`/api/uploads/profile?kind=${kind}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': file.type, 'X-CSRF-Token': csrf() }, body: file })
