@@ -9,8 +9,6 @@ const positiveInt = (fallback: number) => z.preprocess(v => v === undefined || v
 const schema = z.object({
   NODE_ENV: z.enum(['development','test','production']).default('development'),
   PORT: positiveInt(5173),
-  APP_URL: optionalUrl,
-  ALLOWED_ORIGINS: z.string().default('http://localhost:5173'),
   TRUST_PROXY: bool(false),
   LOG_LEVEL: z.enum(['debug','info','warn','error']).default('info'),
 
@@ -21,15 +19,6 @@ const schema = z.object({
   SUPABASE_STORAGE_BUCKET: z.string().default('langgor-media'),
   DATABASE_URL: optionalString,
   DIRECT_URL: optionalString,
-
-  SESSION_COOKIE_NAME: z.string().regex(/^[a-zA-Z0-9_-]+$/).default('langgor_access'),
-  REFRESH_COOKIE_NAME: z.string().regex(/^[a-zA-Z0-9_-]+$/).default('langgor_refresh'),
-  REMEMBER_SESSION_TTL_MS: positiveInt(2_592_000_000),
-  COOKIE_SECURE: bool(false),
-  COOKIE_SAME_SITE: z.enum(['strict','lax','none']).default('lax'),
-
-  CSRF_COOKIE_NAME: z.string().regex(/^[a-zA-Z0-9_-]+$/).default('langgor_csrf'),
-  CSRF_TOKEN_TTL_MS: positiveInt(86_400_000),
 
   RATE_LIMIT_STORE: z.enum(['memory','redis']).default('memory'),
   REDIS_URL: optionalString,
@@ -67,7 +56,6 @@ const schema = z.object({
   BOOTSTRAP_ADMIN_EMAIL: z.preprocess(v => v === '' ? undefined : v, z.string().email().optional()),
 }).superRefine((env, ctx) => {
   if (env.RATE_LIMIT_STORE === 'redis' && !env.REDIS_URL) ctx.addIssue({ code:'custom', path:['REDIS_URL'], message:'REDIS_URL is required when RATE_LIMIT_STORE=redis.' })
-  if (env.COOKIE_SAME_SITE === 'none' && !env.COOKIE_SECURE) ctx.addIssue({ code:'custom', path:['COOKIE_SECURE'], message:'COOKIE_SECURE must be true when COOKIE_SAME_SITE=none.' })
   if (env.PAYMENT_PROVIDER === 'midtrans' && !env.MIDTRANS_SERVER_KEY) ctx.addIssue({ code:'custom', path:['MIDTRANS_SERVER_KEY'], message:'MIDTRANS_SERVER_KEY is required for Midtrans.' })
   if (env.PAYMENT_PROVIDER === 'xendit' && !env.XENDIT_SECRET_KEY) ctx.addIssue({ code:'custom', path:['XENDIT_SECRET_KEY'], message:'XENDIT_SECRET_KEY is required for Xendit.' })
 })
@@ -83,11 +71,9 @@ export const config = {
   env: env.NODE_ENV,
   isProduction: env.NODE_ENV === 'production',
   port: env.PORT,
-  app: { url: env.APP_URL, allowedOrigins: new Set(env.ALLOWED_ORIGINS.split(',').map(v => v.trim()).filter(Boolean)), trustProxy: env.TRUST_PROXY, logLevel: env.LOG_LEVEL },
+  app: { trustProxy: env.TRUST_PROXY || Boolean(process.env.VERCEL), logLevel: env.LOG_LEVEL },
   supabase: { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY, jwtSecret: env.SUPABASE_JWT_SECRET, storageBucket: env.SUPABASE_STORAGE_BUCKET },
   database: { url: env.DATABASE_URL, directUrl: env.DIRECT_URL },
-  auth: { sessionCookieName: env.SESSION_COOKIE_NAME, refreshCookieName: env.REFRESH_COOKIE_NAME, rememberTtlMs: env.REMEMBER_SESSION_TTL_MS, cookieSecure: env.COOKIE_SECURE, cookieSameSite: env.COOKIE_SAME_SITE },
-  csrf: { cookieName: env.CSRF_COOKIE_NAME, ttlMs: env.CSRF_TOKEN_TTL_MS },
   rateLimit: { store: env.RATE_LIMIT_STORE, redisUrl: env.REDIS_URL, apiWindowMs: env.RATE_LIMIT_WINDOW_MS, apiMax: env.RATE_LIMIT_MAX, authWindowMs: env.AUTH_RATE_LIMIT_WINDOW_MS, authMax: env.AUTH_RATE_LIMIT_MAX, uploadWindowMs: env.UPLOAD_RATE_LIMIT_WINDOW_MS, uploadMax: env.UPLOAD_RATE_LIMIT_MAX },
   uploads: { profileMaxBytes: env.PROFILE_UPLOAD_MAX_BYTES, imageMaxDimension: env.IMAGE_MAX_DIMENSION, imageMinDimension: env.IMAGE_MIN_DIMENSION, bannerMinAspectRatio: env.BANNER_MIN_ASPECT_RATIO },
   delivery: { encryptionKey: env.DELIVERY_ENCRYPTION_KEY, kmsKeyId: env.KMS_KEY_ID, kmsRegion: env.KMS_REGION },
@@ -97,4 +83,3 @@ export const config = {
 } as const
 
 if (config.isProduction && config.rateLimit.store === 'memory') console.warn('[config] RATE_LIMIT_STORE=memory is not suitable for multiple production instances.')
-if (config.isProduction && !config.auth.cookieSecure) console.warn('[config] COOKIE_SECURE should be true in production.')

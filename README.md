@@ -20,6 +20,8 @@ SUPABASE_STORAGE_BUCKET=langgor-media
 
 Service-role key hanya boleh berada di server dan tidak boleh memakai prefix `VITE_`.
 
+URL website dan cookie auth tidak memerlukan environment variables. Backend otomatis membaca `Host`, `Origin`, `X-Forwarded-Host`, dan `X-Forwarded-Proto`. HTTPS otomatis memakai `Secure`; localhost otomatis tetap dapat menggunakan HTTP. Nama cookie dikelola aplikasi: `langgor_access`, `langgor_refresh`, dan `langgor_csrf`.
+
 1. Buka Supabase SQL Editor.
 2. Jalankan seluruh isi `server/schema.sql`.
 3. Daftar melalui `/register`.
