@@ -24,6 +24,8 @@ app.use(helmet({contentSecurityPolicy:false,crossOriginEmbedderPolicy:false,fram
 app.use(compression())
 app.use(express.json({limit:'256kb'}))
 app.use(cookieParser())
+// Vercel rewrites /api/* to /api/index?path=*. Restore the API route before dispatch.
+app.use((req,_res,next)=>{if(req.path==='/api/index'){const current=new URL(req.url,'http://vercel.internal');const forwarded=current.searchParams.get('path')||'';current.searchParams.delete('path');const suffix=forwarded.replace(/^\/+/, '');const query=current.searchParams.toString();req.url=`/api${suffix?`/${suffix}`:''}${query?`?${query}`:''}`}next()})
 app.use('/api',withLimiter('api'))
 
 const ACCESS_COOKIE='langgor_access'
