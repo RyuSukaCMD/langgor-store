@@ -16,9 +16,18 @@ async function store(prefix: string): Promise<Store | undefined> {
 }
 
 export async function createRateLimiters() {
-  const [apiStore, authStore, uploadStore] = await Promise.all([
-    store('langgor:rl:api:'), store('langgor:rl:auth:'), store('langgor:rl:upload:'),
-  ])
+  let apiStore: Store | undefined
+  let authStore: Store | undefined
+  let uploadStore: Store | undefined
+  try {
+    ;[apiStore, authStore, uploadStore] = await Promise.all([
+      store('langgor:rl:api:'), store('langgor:rl:auth:'), store('langgor:rl:upload:'),
+    ])
+  } catch (error) {
+    console.error('[rate-limit] Redis unavailable, using isolated memory limits:', error instanceof Error ? error.message : error)
+    if (redis?.isOpen) await redis.disconnect()
+    redis = null
+  }
   return {
     api: rateLimit({ windowMs: config.rateLimit.apiWindowMs, limit: config.rateLimit.apiMax, store: apiStore, standardHeaders: 'draft-8', legacyHeaders: false, message: { message: 'Terlalu banyak permintaan. Coba lagi sebentar.' } }),
     auth: rateLimit({ windowMs: config.rateLimit.authWindowMs, limit: config.rateLimit.authMax, store: authStore, standardHeaders: 'draft-8', legacyHeaders: false, message: { message: 'Terlalu banyak percobaan. Tunggu beberapa menit.' } }),

@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import express, { type NextFunction, type Request, type Response } from 'express'
 import helmet from 'helmet'
 import { z } from 'zod'
-import { config } from './config'
+import { config, configurationIssues } from './config'
 import { createRateLimiters } from './rateLimit'
 import { createSupabaseAuthClient, getSupabaseAdmin, isSupabaseConfigured } from './supabase'
 import type { Notification, Order, Product, User } from '../src/types'
@@ -83,7 +83,7 @@ const registerSchema=z.object({username:z.string().regex(/^[a-z0-9_]{4,20}$/,'Us
 const productInputSchema=z.object({name:z.string().min(4).max(80),category:z.string().min(2).max(40),description:z.string().min(20).max(400),price:z.number().int().min(1000).max(100000000),stock:z.number().int().min(0).max(999999),status:z.enum(['ready','limited','sold']),specs:z.array(z.string().min(2).max(80)).min(1).max(12),icon:z.string().min(1).max(2),accent:z.enum(['violet','pink','cyan','amber'])})
 const userAdminUpdateSchema=z.object({role:z.enum(['user','moderator','admin']).optional(),status:z.enum(['active','suspended']).optional()}).refine(value=>Object.keys(value).length>0,'Tidak ada perubahan.')
 
-app.get('/api/health',(_req,res)=>res.json({ok:true,time:new Date().toISOString(),environment:config.env,services:{supabase:isSupabaseConfigured?'configured':'not-configured',rateLimit:config.rateLimit.store}}))
+app.get('/api/health',(_req,res)=>res.json({ok:true,time:new Date().toISOString(),environment:config.env,services:{supabase:isSupabaseConfigured?'configured':'not-configured',rateLimit:config.rateLimit.store},configurationIssues}))
 app.get('/api/products',async(_req,res)=>{if(!isSupabaseConfigured)return res.json({products:[],configured:false,message:'Supabase belum dikonfigurasi.'});const {data,error}=await getSupabaseAdmin().from('products').select(productColumns).order('created_at',{ascending:true});if(error)return res.status(500).json({message:'Katalog gagal dimuat.'});res.json({products:(data||[]).map(mapProduct),configured:true})})
 app.get('/api/users/:username/public',requireSupabase,async(req,res)=>{const {data,error}=await getSupabaseAdmin().from('users').select('username,created_at,profiles(nickname,bio,avatar_url,banner_url,accent)').eq('username',String(req.params.username).toLowerCase()).eq('status','active').maybeSingle();if(error||!data)return res.status(404).json({message:'Profil tidak ditemukan.'});const profile=profileFromRelation((data as any).profiles) as any;res.json({profile:{username:data.username,nickname:profile.nickname||data.username,bio:profile.bio||'',avatarUrl:profile.avatar_url||null,bannerUrl:profile.banner_url||null,accent:profile.accent||null,joinedAt:data.created_at}})})
 

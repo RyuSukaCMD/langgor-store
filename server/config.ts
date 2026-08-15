@@ -60,11 +60,24 @@ const schema = z.object({
   if (env.PAYMENT_PROVIDER === 'xendit' && !env.XENDIT_SECRET_KEY) ctx.addIssue({ code:'custom', path:['XENDIT_SECRET_KEY'], message:'XENDIT_SECRET_KEY is required for Xendit.' })
 })
 
-const parsed = schema.safeParse(process.env)
-if (!parsed.success) {
-  const detail = parsed.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('\n')
-  throw new Error(`Invalid environment configuration:\n${detail}`)
+const sanitizedEnv: Record<string, unknown> = { ...process.env }
+export const configurationIssues: string[] = []
+let parsed = schema.safeParse(sanitizedEnv)
+for (let attempt = 0; !parsed.success && attempt < 6; attempt++) {
+  for (const issue of parsed.error.issues) {
+    const key = String(issue.path[0] || '')
+    configurationIssues.push(`${issue.path.join('.')}: ${issue.message}`)
+    if (key === 'REDIS_URL') sanitizedEnv.RATE_LIMIT_STORE = 'memory'
+    else if (key === 'MIDTRANS_SERVER_KEY' || key === 'XENDIT_SECRET_KEY') sanitizedEnv.PAYMENT_PROVIDER = 'sandbox'
+    else if (key) delete sanitizedEnv[key]
+  }
+  parsed = schema.safeParse(sanitizedEnv)
 }
+if (!parsed.success) {
+  configurationIssues.push('Environment fallback defaults were applied.')
+  parsed = schema.safeParse({ NODE_ENV: process.env.NODE_ENV === 'production' ? 'production' : 'development' })
+}
+if (!parsed.success) throw new Error('Default environment configuration is invalid.')
 const env = parsed.data
 
 export const config = {
