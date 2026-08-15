@@ -41,14 +41,14 @@ export function DashboardPage() {
 
     <section className="dashboard-focus-grid">
       <article className="dashboard-panel dashboard-latest">
-        <div className="dashboard-panel__head"><div><span className="dashboard-kicker">PESANAN TERBARU</span><h2>Aktivitas terakhir</h2></div>{latest&&<StatusBadge status={latest.status}/>}</div>
+        <div className="dashboard-panel__head"><div><span className="dashboard-kicker">{latest?'PESANAN TERBARU':'PROFIL'}</span><h2>{latest?'Aktivitas terakhir':'Profil kamu'}</h2></div>{latest&&<StatusBadge status={latest.status}/>}</div>
         {loading?<div className="dashboard-latest__loading"><Skeleton/><Skeleton/><Skeleton/></div>:latest?<>
           <div className="dashboard-latest__product"><span>{latest.productIcon}</span><div><strong>{latest.productName}</strong><small>{latest.id} · {latest.date}</small></div><b>{rupiah(latest.price)}</b></div>
           {latest.status!=='refunded'&&<div className="dashboard-order-progress">
             {[['Pesanan dibuat',1],['Sedang diproses',2],['Selesai',3]].map(([label,index])=><div className={stage>=Number(index)?'is-done':''} key={String(label)}><i>{stage>Number(index)?'✓':index}</i><span>{label}</span></div>)}
           </div>}
           <Link className="dashboard-text-link" to="/purchases">Lihat rincian <ArrowRight/></Link>
-        </>:<div className="dashboard-empty"><span><Cookie/></span><div><strong>Belum ada pembelian</strong><p>Pilih Cookie yang sesuai untuk membuat pesanan pertamamu.</p><Link to="/store/cookies">Lihat katalog <ArrowRight/></Link></div></div>}
+        </>:<div className="dashboard-static-profile"><span className="dashboard-static-profile__avatar" style={avatarStyle}>{user.avatarUrl?'':user.avatar}</span><div><strong>{user.nickname}</strong><small>@{user.username}</small><p>{user.bio||'Lengkapi profil agar akunmu lebih mudah dikenali.'}</p></div><Link to="/profile">Atur profil <ArrowRight/></Link></div>}
       </article>
 
       <aside className="dashboard-panel dashboard-shortcuts">
