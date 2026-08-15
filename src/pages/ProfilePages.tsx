@@ -2,6 +2,7 @@ import { BadgeCheck, Camera, Check, Cookie, Image, Save, ShieldCheck, Upload, Us
 import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
+import { Avatar } from '../components/Avatar'
 import { Button, Input } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -58,7 +59,7 @@ export function ProfilePage() {
     <form onSubmit={save}>
       <fieldset className="profile-save-fieldset" disabled={loading}><section className="profile-preview-card">
         <div className="profile-preview-banner" style={{'--profile-accent':form.accent, backgroundImage: bannerSource?`url(${bannerSource})`:undefined} as CSSProperties}><label className="upload-button"><Image/> Ganti banner<input type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={e => chooseFile(e.target.files?.[0], 'banner')}/></label></div>
-        <div className="profile-preview-content"><div className="avatar-edit"><span className="avatar avatar--xxl" style={{backgroundImage:avatarSource?`url(${avatarSource})`:undefined}}>{!avatarSource&&user.avatar}</span><label><Camera/><input type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={e => chooseFile(e.target.files?.[0], 'avatar')}/></label></div><div><h2>{form.nickname || 'Nickname kamu'}</h2><span>@{form.username || 'username'}</span></div><span className="profile-preview-role"><ShieldCheck/> Akun terverifikasi</span></div>
+        <div className="profile-preview-content"><div className="avatar-edit"><Avatar className="avatar--xxl" src={avatarSource} initials={user.avatar} label="Foto profil saat ini"/><label><Camera/><input type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={e => chooseFile(e.target.files?.[0], 'avatar')}/></label></div><div><h2>{form.nickname || 'Nickname kamu'}</h2><span>@{form.username || 'username'}</span></div><span className="profile-preview-role"><ShieldCheck/> Akun terverifikasi</span></div>
       </section>
       {fileError && <div className="form-alert form-alert--error">{fileError}</div>}
       <div className="profile-form-grid">
@@ -81,7 +82,7 @@ export function PublicProfilePage() {
   const initials=profile.nickname.split(/\s+/).map(part=>part[0]).slice(0,2).join('').toUpperCase()
   const joined=new Date(profile.joinedAt).toLocaleDateString('id-ID',{month:'long',year:'numeric'})
   return <div className="public-profile-page"><PublicHeader/><main className="container public-profile-main">
-    <section className="public-profile-hero"><div className="public-profile-banner" style={profile.bannerUrl?{backgroundImage:`url(${profile.bannerUrl})`}:undefined}><span/><i/></div><div className="public-profile-info"><span className="avatar avatar--xxl" style={profile.avatarUrl?{backgroundImage:`url(${profile.avatarUrl})`}:undefined}>{profile.avatarUrl?'':initials}</span><div><h1>{profile.nickname} <BadgeCheck/></h1><span>@{profile.username}</span><p>{profile.bio}</p><div className="profile-chips"><span><ShieldCheck/> Verified member</span><span><Cookie/> Cookie Store</span><span>Bergabung {joined}</span></div></div></div></section>
+    <section className="public-profile-hero"><div className="public-profile-banner" style={profile.bannerUrl?{backgroundImage:`url(${profile.bannerUrl})`}:undefined}><span/><i/></div><div className="public-profile-info"><Avatar className="avatar--xxl" src={profile.avatarUrl} initials={initials} label={`Foto profil ${profile.nickname}`}/><div><h1>{profile.nickname} <BadgeCheck/></h1><span>@{profile.username}</span><p>{profile.bio}</p><div className="profile-chips"><span><ShieldCheck/> Verified member</span><span><Cookie/> Cookie Store</span><span>Bergabung {joined}</span></div></div></div></section>
     <section className="profile-listings"><div className="section-head"><div><span className="eyebrow">PRIVACY STATUS</span><h2>Aktivitas bersifat privat.</h2><p>Informasi Cookie dan detail pembelian tidak ditampilkan pada profil publik.</p></div></div><div className="profile-placeholder"><ShieldCheck/><h3>Order details are private.</h3><p>Hanya pemilik akun yang dapat melihat delivery dan riwayat transaksi.</p></div></section>
   </main></div>
 }

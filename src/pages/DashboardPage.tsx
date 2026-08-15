@@ -2,6 +2,7 @@ import { ArrowRight, Clock3, Cookie, PackageCheck, Plus, RefreshCw, ShoppingBag,
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../components/StatusBadge'
+import { Avatar } from '../components/Avatar'
 import { Skeleton } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
 import { rupiah } from '../data'
@@ -22,12 +23,11 @@ export function DashboardPage() {
   const completed=orders.filter(order=>order.status==='completed').length
   const processing=orders.filter(order=>order.status==='processing'||order.status==='pending').length
   const firstName=user.nickname.trim().split(/\s+/)[0]||user.username
-  const avatarStyle=user.avatarUrl?{backgroundImage:`url(${user.avatarUrl})`}:undefined
   const stage=latest?.status==='completed'?3:latest?.status==='processing'?2:latest?.status==='pending'?1:0
 
   return <div className="dashboard-page minimal-dashboard page-enter">
     <header className="minimal-dashboard__header">
-      <div className="minimal-dashboard__identity"><span className="dashboard-avatar" style={avatarStyle}>{user.avatarUrl?'':user.avatar}</span><div><span className="dashboard-kicker">RINGKASAN AKUN</span><h1>{timeGreeting()}, {firstName}.</h1><p>Pantau pembelian dan akses pesananmu dari satu tempat.</p></div></div>
+      <div className="minimal-dashboard__identity"><Avatar className="dashboard-avatar" src={user.avatarUrl} initials={user.avatar} label={`Foto profil ${user.nickname}`}/><div><span className="dashboard-kicker">RINGKASAN AKUN</span><h1>{timeGreeting()}, {firstName}.</h1><p>Pantau pembelian dan akses pesananmu dari satu tempat.</p></div></div>
       <Link className="btn btn--primary" to="/store/cookies"><Plus/> Beli Cookie</Link>
     </header>
 
@@ -48,7 +48,7 @@ export function DashboardPage() {
             {[['Pesanan dibuat',1],['Sedang diproses',2],['Selesai',3]].map(([label,index])=><div className={stage>=Number(index)?'is-done':''} key={String(label)}><i>{stage>Number(index)?'✓':index}</i><span>{label}</span></div>)}
           </div>}
           <Link className="dashboard-text-link" to="/purchases">Lihat rincian <ArrowRight/></Link>
-        </>:<div className="dashboard-static-profile"><span className="dashboard-static-profile__avatar" style={avatarStyle}>{user.avatarUrl?'':user.avatar}</span><div><strong>{user.nickname}</strong><small>@{user.username}</small><p>{user.bio||'Lengkapi profil agar akunmu lebih mudah dikenali.'}</p></div><Link to="/profile">Atur profil <ArrowRight/></Link></div>}
+        </>:<div className="dashboard-static-profile"><Avatar className="dashboard-static-profile__avatar" src={user.avatarUrl} initials={user.avatar} label={`Foto profil ${user.nickname}`}/><div><strong>{user.nickname}</strong><small>@{user.username}</small><p>{user.bio||'Lengkapi profil agar akunmu lebih mudah dikenali.'}</p></div><Link to="/profile">Atur profil <ArrowRight/></Link></div>}
       </article>
 
       <aside className="dashboard-panel dashboard-shortcuts">

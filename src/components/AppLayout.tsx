@@ -1,9 +1,10 @@
 import { Cookie, LayoutDashboard, LogOut, Menu, PackageCheck, ShieldCheck, ShoppingBag, User, X, Zap } from 'lucide-react'
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Logo } from './Logo'
 import { Notifications } from './Notifications'
+import { Avatar } from './Avatar'
 
 const mainLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -16,6 +17,8 @@ export function AppLayout() {
   const [open, setOpen] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location=useLocation()
+  const pageLabel=location.pathname.startsWith('/purchases')?'pembelian':location.pathname.startsWith('/profile')?'profil':location.pathname.startsWith('/admin')?'admin':'dashboard'
   const handleLogout = async () => { await logout(); navigate('/') }
   if (!user) return null
   return <div className="app-shell">
@@ -32,7 +35,7 @@ export function AppLayout() {
         </div>
       </div>
       <div className="sidebar__profile">
-        <Link to="/profile" className="mini-profile"><span className="avatar avatar--sm" style={user.avatarUrl?{backgroundImage:`url(${user.avatarUrl})`}:undefined}>{user.avatarUrl?'':user.avatar}</span><span><strong>{user.nickname}</strong><small>@{user.username}</small></span></Link>
+        <Link to="/profile" className="mini-profile"><Avatar className="avatar--sm" src={user.avatarUrl} initials={user.avatar} label={`Foto profil ${user.nickname}`}/><span><strong>{user.nickname}</strong><small>@{user.username}</small></span></Link>
         <button className="icon-btn" onClick={handleLogout} aria-label="Keluar"><LogOut /></button>
       </div>
     </aside>
@@ -40,8 +43,8 @@ export function AppLayout() {
     <div className="app-main">
       <header className="app-topbar">
         <button className="icon-btn app-menu" onClick={() => setOpen(true)} aria-label="Buka menu"><Menu /></button>
-        <div className="app-topbar__crumb"><span className="topbar-kicker">LANGGOR /</span><span> dashboard</span></div>
-        <div className="app-topbar__actions"><Notifications /><Link to="/profile" className="avatar avatar--sm" style={user.avatarUrl?{backgroundImage:`url(${user.avatarUrl})`}:undefined} aria-label="Profil saya">{user.avatarUrl?'':user.avatar}</Link></div>
+        <div className="app-topbar__crumb"><span className="topbar-kicker">LANGGOR /</span><span> {pageLabel}</span></div>
+        <div className="app-topbar__actions"><Notifications /><Link to="/profile" className="topbar-avatar-link" aria-label="Profil saya"><Avatar className="avatar--sm" src={user.avatarUrl} initials={user.avatar} label={`Foto profil ${user.nickname}`}/></Link></div>
       </header>
       <main className="app-content"><Outlet /></main>
       <nav className="mobile-dock mobile-dock--game" aria-label="Navigasi mobile">
