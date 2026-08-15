@@ -52,7 +52,7 @@ const schema = z.object({
   SUPPORT_EMAIL: z.string().email().default('halo@langgor.store'),
   SENTRY_DSN: optionalUrl,
   SENTRY_ENVIRONMENT: z.string().default('development'),
-  AUDIT_IP_HASH_SECRET: z.string().min(32),
+  AUDIT_IP_HASH_SECRET: optionalString,
   BOOTSTRAP_ADMIN_EMAIL: z.preprocess(v => v === '' ? undefined : v, z.string().email().optional()),
 }).superRefine((env, ctx) => {
   if (env.RATE_LIMIT_STORE === 'redis' && !env.REDIS_URL) ctx.addIssue({ code:'custom', path:['REDIS_URL'], message:'REDIS_URL is required when RATE_LIMIT_STORE=redis.' })
