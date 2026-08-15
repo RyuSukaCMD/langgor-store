@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 const optionalUrl = z.preprocess(v => v === '' ? undefined : v, z.string().url().optional())
 const optionalString = z.preprocess(v => v === '' ? undefined : v, z.string().optional())
-const bool = (fallback: boolean) => z.preprocess(v => v === undefined || v === '' ? fallback : v, z.enum(['true','false']).transform(v => v === 'true'))
+const bool = (fallback: boolean) => z.preprocess(value => value === undefined || value === '' ? String(fallback) : String(value), z.enum(['true','false']).transform(value => value === 'true'))
 const positiveInt = (fallback: number) => z.preprocess(v => v === undefined || v === '' ? fallback : v, z.coerce.number().int().positive())
 
 const schema = z.object({
