@@ -22,7 +22,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
     try {
       const result = await api<{ products: Product[]; configured?: boolean; message?: string }>('/products')
       setProducts(result.products)
-      if (result.configured === false) setError(result.message || 'Supabase belum dikonfigurasi.')
+      if (result.configured === false) setError(result.message || 'Katalog belum dapat digunakan.')
     } catch (reason) {
       setProducts([])
       setError(reason instanceof Error ? reason.message : 'Katalog tidak dapat dimuat.')

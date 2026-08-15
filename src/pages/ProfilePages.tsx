@@ -42,15 +42,15 @@ export function ProfilePage() {
   }
 
   const save = async (e: FormEvent) => {
-    e.preventDefault(); if (usernameError) return; setLoading(true);let identitySaved=false
-    try {
-      await api<{user:User}>('/profile', { method: 'PATCH', body: JSON.stringify(form) });identitySaved=true
-      if(avatarFile)await uploadProfileImage(avatarFile,'avatar')
-      if(bannerFile)await uploadProfileImage(bannerFile,'banner')
-      const fresh=await api<{user:User}>('/auth/me')
-      updateUser(fresh.user);setAvatarFile(null);setBannerFile(null);if(avatarPreview)URL.revokeObjectURL(avatarPreview);if(bannerPreview)URL.revokeObjectURL(bannerPreview);setAvatarPreview(null);setBannerPreview(null);showToast({ tone: 'success', title: 'Profil disimpan', message: 'Identitas dan gambar publikmu sudah diperbarui.' })
-    } catch (error) { if(identitySaved){try{const fresh=await api<{user:User}>('/auth/me');updateUser(fresh.user)}catch{/* state dimuat ulang pada kunjungan berikutnya */}}showToast({ tone: 'error', title: identitySaved?'Sebagian profil tersimpan':'Profil belum disimpan', message: error instanceof Error ? error.message : 'Coba lagi.' }) }
-    finally { setLoading(false) }
+    e.preventDefault();if(usernameError)return;setLoading(true);let identitySaved=false
+    try{
+      const identity=await api<{user:User}>('/profile',{method:'PATCH',body:JSON.stringify(form)});identitySaved=true
+      let nextUser={...identity.user,avatarUrl:identity.user.avatarUrl||user.avatarUrl,bannerUrl:identity.user.bannerUrl||user.bannerUrl};updateUser(nextUser)
+      if(avatarFile){const uploaded=await uploadProfileImage(avatarFile,'avatar');nextUser={...nextUser,avatarUrl:uploaded.url};updateUser(nextUser);setAvatarFile(null);if(avatarPreview)URL.revokeObjectURL(avatarPreview);setAvatarPreview(null)}
+      if(bannerFile){const uploaded=await uploadProfileImage(bannerFile,'banner');nextUser={...nextUser,bannerUrl:uploaded.url};updateUser(nextUser);setBannerFile(null);if(bannerPreview)URL.revokeObjectURL(bannerPreview);setBannerPreview(null)}
+      showToast({tone:'success',title:'Profil disimpan',message:'Identitas dan gambar profilmu sudah diperbarui.'})
+    }catch(error){showToast({tone:'error',title:identitySaved?'Sebagian profil tersimpan':'Profil belum disimpan',message:error instanceof Error?error.message:'Coba lagi.'})}
+    finally{setLoading(false)}
   }
 
   return <div className="content-page profile-edit-page page-enter">
@@ -76,7 +76,7 @@ export function PublicProfilePage() {
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   useEffect(()=>{setLoading(true);api<{profile:typeof profile}>(`/users/${username}/public`).then(result=>setProfile(result.profile)).catch(reason=>setError(reason instanceof Error?reason.message:'Profil tidak ditemukan.')).finally(()=>setLoading(false))},[username])
-  if(loading)return <div className="route-loader">Memuat profil dari Supabase…</div>
+  if(loading)return <div className="route-loader">Memuat profil…</div>
   if(error||!profile)return <div className="public-profile-page"><PublicHeader/><main className="not-found"><h1>Profil tidak tersedia.</h1><p>{error}</p></main></div>
   const initials=profile.nickname.split(/\s+/).map(part=>part[0]).slice(0,2).join('').toUpperCase()
   const joined=new Date(profile.joinedAt).toLocaleDateString('id-ID',{month:'long',year:'numeric'})

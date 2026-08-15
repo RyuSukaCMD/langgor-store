@@ -37,7 +37,7 @@ export function LandingPage() {
             <motion.h1 variants={reveal}>Cookie termurah.<br/><em>100% valid.</em></motion.h1>
             <motion.p variants={reveal}>Cookie login siap pakai yang diperiksa real-time sebelum dikirim. Pembayaran selesai, sistem memvalidasi stok, lalu delivery tersedia otomatis.</motion.p>
             <motion.div variants={reveal} className="game-hero__actions"><Link to="/store/cookies" className="btn btn--primary btn--lg">Beli sekarang <ArrowRight /></Link><a href="#spesifikasi" className="game-text-btn"><span><MousePointer2 /></span> Lihat spesifikasi</a></motion.div>
-            <motion.div variants={reveal} className="game-proof"><span><i><ShieldCheck /></i><b>100% valid</b><small>Dicek sebelum dikirim</small></span><span><i><Zap /></i><b>0.1s delivery</b><small>Pengiriman otomatis</small></span><span><i><ShoppingBag /></i><b>{totalSold.toLocaleString('id-ID')} terjual</b><small>Data dari Supabase</small></span></motion.div>
+            <motion.div variants={reveal} className="game-proof"><span><i><ShieldCheck /></i><b>100% valid</b><small>Dicek sebelum dikirim</small></span><span><i><Zap /></i><b>0.1s delivery</b><small>Pengiriman otomatis</small></span><span><i><ShoppingBag /></i><b>{totalSold.toLocaleString('id-ID')} terjual</b><small>Pembelian terverifikasi</small></span></motion.div>
           </motion.div>
 
           <motion.div className="gate-wrap" style={{ y: panelY }} initial={{ opacity:0, scale:.94, rotate:2 }} animate={{ opacity:1, scale:1, rotate:0 }} transition={{ delay:.22, duration:.7 }}>
@@ -45,7 +45,7 @@ export function LandingPage() {
             <div className="game-gate">
               <div className="game-gate__top"><span><i/><i/><i/></span><b>LANGGOR COOKIE SYSTEM</b><em>LIVE</em></div>
               <div className="game-gate__body">
-                <div className="gate-user"><span>DB</span><div><small>DATA SOURCE</small><strong>Supabase connected</strong></div><button type="button" onClick={()=>void refreshProducts()} disabled={productsLoading} aria-label="Muat ulang katalog"><RefreshCw className={productsLoading?'spin':''}/></button></div>
+                <div className="gate-user"><span>LG</span><div><small>STATUS LAYANAN</small><strong>Katalog siap</strong></div><button type="button" onClick={()=>void refreshProducts()} disabled={productsLoading} aria-label="Muat ulang katalog"><RefreshCw className={productsLoading?'spin':''}/></button></div>
                 <div className="gate-session"><div><span>CATALOG STATUS</span><code>{products.length} PRODUCTS</code></div><motion.i animate={reduceMotion ? {} : { opacity:[.25,1,.25] }} transition={{ duration:1.6,repeat:Infinity }} /></div>
                 <div className="verify-stack">
                   <motion.div className="verify-step is-done" initial={{ x:18,opacity:0 }} animate={{ x:0,opacity:1 }} transition={{ delay:.65 }}><span><Check /></span><div><small>STEP 01</small><strong>Pembayaran diterima</strong><em>Baru saja</em></div></motion.div>
@@ -59,7 +59,7 @@ export function LandingPage() {
               </div>
             </div>
             <motion.div className="gate-float gate-float--top" animate={reduceMotion ? {} : { y:[0,-7,0] }} transition={{ duration:3,repeat:Infinity }}><Cookie/><span><b>{totalStock} stock available</b><small>Data katalog live</small></span></motion.div>
-            <motion.div className="gate-float gate-float--bottom" animate={reduceMotion ? {} : { y:[0,7,0] }} transition={{ duration:3.6,repeat:Infinity }}><Zap/><span><b>Server validated</b><small>Status dari backend</small></span></motion.div>
+            <motion.div className="gate-float gate-float--bottom" animate={reduceMotion ? {} : { y:[0,7,0] }} transition={{ duration:3.6,repeat:Infinity }}><Zap/><span><b>Pesanan terlindungi</b><small>Diperiksa sebelum dikirim</small></span></motion.div>
           </motion.div>
         </div>
         <div className="live-rail"><div className="live-rail__track">{[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}><i/> {product.name.toUpperCase()} • {product.stock} STOK • {product.sold.toLocaleString('id-ID')} TERJUAL</span>)}</div></div>
@@ -67,7 +67,7 @@ export function LandingPage() {
 
       <section className="game-section game-plans" id="spesifikasi"><div className="container">
         <motion.div className="game-section-head" initial="hidden" whileInView="visible" viewport={{once:true,amount:.5}} variants={reveal}><div><span className="game-kicker">{products.length} PILIHAN / LIVE CATALOG</span><h2>Pilih Cookie sesuai<br/>spesifikasi yang dicari.</h2></div><p>Semua Cookie diperiksa sebelum delivery. Perbedaannya ada pada kriteria akun, prioritas stok, dan harga.</p></motion.div>
-        {!products.length&&<div className="cookie-store-empty"><Cookie/><h3>{productsLoading?'Memuat katalog Supabase':'Katalog belum tersedia'}</h3><p>{productsError||'Produk akan tampil setelah data tersedia.'}</p></div>}
+        {!products.length&&<div className="cookie-store-empty"><Cookie/><h3>{productsLoading?'Memuat katalog':'Katalog belum tersedia'}</h3><p>{productsError||'Produk akan tampil setelah data tersedia.'}</p></div>}
         {!!products.length&&<motion.div className="plan-grid" initial="hidden" whileInView="visible" viewport={{once:true,amount:.2}} variants={stagger}>
           {products.slice(0,3).map((product,i) => <motion.article key={product.id} variants={reveal} whileHover={reduceMotion ? {} : { y:-9 }} className={`game-plan game-plan--${product.accent} ${i===1?'is-featured':''}`}>
             {i===1&&<div className="plan-corner"><Sparkles/> HIGHLIGHT</div>}<div className="plan-top"><span className="plan-glyph" style={product.imageUrl?{backgroundImage:`url(${product.imageUrl})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}>{product.imageUrl?'':product.icon}</span><span><small>{product.category}</small><b>{product.name}</b></span></div><p>{product.description}</p><div className="plan-price"><strong>{rupiah(product.price)}</strong><small>/ cookie</small></div><ul>{product.specs.map(spec=><li key={spec}><Check/> {spec}</li>)}</ul><Link to={`/product/${product.id}`} className={`btn ${i===1?'btn--primary':'btn--secondary'}`}>Pilih {product.name.replace('Cookie ','')} <ArrowRight/></Link><div className="plan-beam" /></motion.article>)}
@@ -76,7 +76,7 @@ export function LandingPage() {
       </div></section>
 
       <section className="game-section game-flow" id="cara-aktif"><div className="container game-flow__layout">
-        <motion.div className="flow-copy" initial="hidden" whileInView="visible" viewport={{once:true,amount:.35}} variants={stagger}><motion.span variants={reveal} className="game-kicker">PEMBELIAN / OTOMATIS</motion.span><motion.h2 variants={reveal}>Checkout singkat.<br/>Cookie langsung dikirim.</motion.h2><motion.p variants={reveal}>Status berhasil tidak ditentukan tampilan frontend. Server tetap mencocokkan pembayaran dan validitas Cookie sebelum delivery dibuka.</motion.p><motion.div variants={reveal} className="flow-callout"><TimerReset/><span><b>Pengiriman otomatis</b><small>setelah pembayaran dan validasi selesai</small></span></motion.div></motion.div>
+        <motion.div className="flow-copy" initial="hidden" whileInView="visible" viewport={{once:true,amount:.35}} variants={stagger}><motion.span variants={reveal} className="game-kicker">PEMBELIAN / OTOMATIS</motion.span><motion.h2 variants={reveal}>Checkout singkat.<br/>Cookie langsung dikirim.</motion.h2><motion.p variants={reveal}>Pembayaran dan validitas Cookie diperiksa terlebih dahulu sebelum akses pesanan dibuka.</motion.p><motion.div variants={reveal} className="flow-callout"><TimerReset/><span><b>Pengiriman otomatis</b><small>setelah pembayaran dan validasi selesai</small></span></motion.div></motion.div>
         <motion.div className="flow-steps" initial="hidden" whileInView="visible" viewport={{once:true,amount:.25}} variants={stagger}>
           {[['01','Pilih Cookie','Pilih produk dari katalog aktif sesuai spesifikasi dan harga.',Cookie],['02','Selesaikan pembayaran','Nominal dan status pembayaran diperiksa langsung oleh server.',ShoppingBag],['03','Validasi real-time','Sistem memilih stok lalu memastikan Cookie masih valid.',Radar],['04','Terima Cookie','Delivery tersedia otomatis pada halaman pembelianmu.',PackageCheck]].map(([n,title,text,Icon],i)=><motion.article key={String(n)} variants={reveal}><span className="flow-number">{String(n)}</span><i className="flow-icon"><Icon/></i><div><h3>{String(title)}</h3><p>{String(text)}</p></div>{i<3&&<motion.b initial={{scaleY:0}} whileInView={{scaleY:1}} viewport={{once:true}} transition={{delay:.2+i*.1}}/>}</motion.article>)}
         </motion.div>

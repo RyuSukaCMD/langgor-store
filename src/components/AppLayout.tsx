@@ -28,7 +28,7 @@ export function AppLayout() {
           {user.role === 'admin' && <><span className="sidebar-nav__label">Kontrol</span><NavLink to="/admin" onClick={() => setOpen(false)}><ShieldCheck /><span>Admin control</span></NavLink></>}
         </nav>
         <div className="seller-nudge game-nudge">
-          <span className="seller-nudge__art"><Zap /></span><strong>Validation system aktif</strong><p>Stok dan validitas Cookie diperiksa otomatis sebelum delivery.</p><Link to="/purchases">Lihat pembelian →</Link>
+          <span className="seller-nudge__art"><Zap /></span><strong>Belanja lebih tenang</strong><p>Stok dan validitas Cookie diperiksa sebelum pesanan dikirim.</p><Link to="/purchases">Lihat pembelian →</Link>
         </div>
       </div>
       <div className="sidebar__profile">

@@ -62,7 +62,7 @@ export function NotFoundPage() {
         </section>
       </div>
 
-      <div className="cookie-404__rail"><div>{products.length?[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}>{product.name.toUpperCase()} • {product.status.toUpperCase()} • {product.stock} STOK</span>):<><span>404 • PAGE NOT FOUND</span><b>KATALOG TIDAK TERSEDIA</b><span>SUPABASE CONNECTION REQUIRED</span></>}</div></div>
+      <div className="cookie-404__rail"><div>{products.length?[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}>{product.name.toUpperCase()} • {product.status.toUpperCase()} • {product.stock} STOK</span>):<><span>404 • PAGE NOT FOUND</span><b>KATALOG TIDAK TERSEDIA</b><span>KATALOG BELUM TERSEDIA</span></>}</div></div>
     </main>
   </LazyMotion>
 }
