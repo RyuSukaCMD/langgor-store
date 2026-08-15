@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, Check, Cookie, HelpCircle, PackageCheck, Radar, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TimerReset, Zap } from 'lucide-react'
+import { ArrowRight, Check, Cookie, HelpCircle, PackageCheck, Radar, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TimerReset } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
@@ -30,7 +30,7 @@ export function StorePage({ kind }: { kind: ProductKind }) {
 
         {loading?<div className="cookie-store-empty"><RefreshCw className="spin"/><h3>Memuat katalog</h3><p>Mengambil produk dari Supabase.</p></div>:error?<div className="cookie-store-empty"><RefreshCw/><h3>Katalog gagal dimuat</h3><p>{error}</p><button className="btn btn--secondary" onClick={()=>void refreshProducts()}>Coba lagi</button></div>:products.length?<motion.div className="cookie-tier-grid" initial="hidden" animate="visible" variants={{hidden:{},visible:{transition:{staggerChildren:.09}}}}>
           {products.map((product,i)=><motion.article key={product.id} variants={{hidden:{opacity:0,y:24},visible:{opacity:1,y:0}}} whileHover={reduceMotion?{}:{y:-8}} className={`cookie-tier cookie-tier--${product.accent} ${selected?.id===product.id?'is-recommended':''}`}>
-            <div className="cookie-tier__signal"><span>{product.icon}</span><motion.i animate={reduceMotion?{}:{scale:[1,1.25,1],opacity:[.25,.05,.25]}} transition={{duration:2.4,repeat:Infinity}}/></div>
+            <div className={`cookie-tier__signal ${product.imageUrl?'has-image':''}`}><span style={product.imageUrl?{backgroundImage:`url(${product.imageUrl})`}:undefined}>{product.imageUrl?'':product.icon}</span><motion.i animate={reduceMotion?{}:{scale:[1,1.25,1],opacity:[.25,.05,.25]}} transition={{duration:2.4,repeat:Infinity}}/></div>
             <div className="cookie-tier__heading"><span>{product.category}</span>{selected?.id===product.id&&<em><Sparkles/> Dipilih</em>}<h2>{product.name}</h2><p>{product.description}</p></div>
             <div className="cookie-tier__price"><strong>{rupiah(product.price)}</strong><small>per Cookie</small></div>
             <ul>{product.specs.map(spec=><li key={spec}><Check/>{spec}</li>)}</ul>

@@ -14,6 +14,7 @@ const PublicProfilePage = lazy(() => import('./pages/ProfilePages').then(m => ({
 const PurchasesPage = lazy(() => import('./pages/PurchasesPage').then(m => ({ default: m.PurchasesPage })))
 const StorePage = lazy(() => import('./pages/StorePage').then(m => ({ default: m.StorePage })))
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })))
+const LegalPage = lazy(() => import('./pages/LegalPage').then(m => ({ default: m.LegalPage })))
 
 function RouteFallback() {
   return <div className="route-loader"><LoaderCircle className="spin" /><span>Menyiapkan Langgor…</span></div>
@@ -31,6 +32,8 @@ export default function App() {
     <Route path="/store/accounts" element={<Navigate to="/store/cookies" replace />} />
     <Route path="/product/:id" element={<ProductDetailPage />} />
     <Route path="/u/:username" element={<PublicProfilePage />} />
+    <Route path="/terms" element={<LegalPage kind="terms" />} />
+    <Route path="/privacy" element={<LegalPage kind="privacy" />} />
     <Route element={<ProtectedRoute />}>
       <Route element={<AppLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
-import { ArrowRight, Check, ChevronDown, Cookie, Fingerprint, KeyRound, LockKeyhole, MousePointer2, PackageCheck, Radar, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TimerReset, Zap } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, Cookie, LockKeyhole, MousePointer2, PackageCheck, Radar, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TimerReset, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
@@ -10,7 +10,7 @@ const reveal = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } }
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: .09 } } }
 export function LandingPage() {
   const [faq, setFaq] = useState<number | null>(0)
-  const { products,loading:productsLoading,error:productsError } = useProducts()
+  const { products,loading:productsLoading,error:productsError,refreshProducts } = useProducts()
   const totalSold=products.reduce((sum,product)=>sum+product.sold,0)
   const totalStock=products.reduce((sum,product)=>sum+product.stock,0)
   const reduceMotion = useReducedMotion()
@@ -45,7 +45,7 @@ export function LandingPage() {
             <div className="game-gate">
               <div className="game-gate__top"><span><i/><i/><i/></span><b>LANGGOR COOKIE SYSTEM</b><em>LIVE</em></div>
               <div className="game-gate__body">
-                <div className="gate-user"><span>DB</span><div><small>DATA SOURCE</small><strong>Supabase connected</strong></div><button><RefreshCw /></button></div>
+                <div className="gate-user"><span>DB</span><div><small>DATA SOURCE</small><strong>Supabase connected</strong></div><button type="button" onClick={()=>void refreshProducts()} disabled={productsLoading} aria-label="Muat ulang katalog"><RefreshCw className={productsLoading?'spin':''}/></button></div>
                 <div className="gate-session"><div><span>CATALOG STATUS</span><code>{products.length} PRODUCTS</code></div><motion.i animate={reduceMotion ? {} : { opacity:[.25,1,.25] }} transition={{ duration:1.6,repeat:Infinity }} /></div>
                 <div className="verify-stack">
                   <motion.div className="verify-step is-done" initial={{ x:18,opacity:0 }} animate={{ x:0,opacity:1 }} transition={{ delay:.65 }}><span><Check /></span><div><small>STEP 01</small><strong>Pembayaran diterima</strong><em>Baru saja</em></div></motion.div>
@@ -54,7 +54,7 @@ export function LandingPage() {
                   <div className="verify-line is-muted" />
                   <div className="verify-step"><span><PackageCheck /></span><div><small>FINAL</small><strong>Cookie siap diambil</strong><em>Delivery privat</em></div></div>
                 </div>
-                <button className="gate-confirm"><LockKeyhole /> Buka delivery <ArrowRight /></button>
+                <Link to="/purchases" className="gate-confirm"><LockKeyhole /> Buka pembelian <ArrowRight /></Link>
                 <p><ShieldCheck /> Pengiriman otomatis • valid saat dikirim</p>
               </div>
             </div>
@@ -70,7 +70,7 @@ export function LandingPage() {
         {!products.length&&<div className="cookie-store-empty"><Cookie/><h3>{productsLoading?'Memuat katalog Supabase':'Katalog belum tersedia'}</h3><p>{productsError||'Produk akan tampil setelah data tersedia.'}</p></div>}
         {!!products.length&&<motion.div className="plan-grid" initial="hidden" whileInView="visible" viewport={{once:true,amount:.2}} variants={stagger}>
           {products.slice(0,3).map((product,i) => <motion.article key={product.id} variants={reveal} whileHover={reduceMotion ? {} : { y:-9 }} className={`game-plan game-plan--${product.accent} ${i===1?'is-featured':''}`}>
-            {i===1&&<div className="plan-corner"><Sparkles/> HIGHLIGHT</div>}<div className="plan-top"><span className="plan-glyph">{product.icon}</span><span><small>{product.category}</small><b>{product.name}</b></span></div><p>{product.description}</p><div className="plan-price"><strong>{rupiah(product.price)}</strong><small>/ cookie</small></div><ul>{product.specs.map(spec=><li key={spec}><Check/> {spec}</li>)}</ul><Link to={`/product/${product.id}`} className={`btn ${i===1?'btn--primary':'btn--secondary'}`}>Pilih {product.name.replace('Cookie ','')} <ArrowRight/></Link><div className="plan-beam" /></motion.article>)}
+            {i===1&&<div className="plan-corner"><Sparkles/> HIGHLIGHT</div>}<div className="plan-top"><span className="plan-glyph" style={product.imageUrl?{backgroundImage:`url(${product.imageUrl})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}>{product.imageUrl?'':product.icon}</span><span><small>{product.category}</small><b>{product.name}</b></span></div><p>{product.description}</p><div className="plan-price"><strong>{rupiah(product.price)}</strong><small>/ cookie</small></div><ul>{product.specs.map(spec=><li key={spec}><Check/> {spec}</li>)}</ul><Link to={`/product/${product.id}`} className={`btn ${i===1?'btn--primary':'btn--secondary'}`}>Pilih {product.name.replace('Cookie ','')} <ArrowRight/></Link><div className="plan-beam" /></motion.article>)}
         </motion.div>}
         <p className="plans-footnote"><ShieldCheck/> Cookie diperiksa real-time dan hanya tersedia melalui delivery privat.</p>
       </div></section>

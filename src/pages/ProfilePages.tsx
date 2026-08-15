@@ -23,6 +23,8 @@ export function ProfilePage() {
   const usernameError = useMemo(() => form.username && !/^[a-z0-9_]{4,20}$/.test(form.username) ? 'Gunakan 4–20 huruf kecil, angka, atau underscore.' : '', [form.username])
   if (!user) return null
   const set = (key: string, value: string) => setForm(v => ({ ...v, [key]: value }))
+  const avatarSource=avatarPreview||user.avatarUrl
+  const bannerSource=bannerPreview||user.bannerUrl
 
   const chooseFile = (file: File | undefined, type: 'avatar' | 'banner') => {
     setFileError('')
@@ -40,27 +42,29 @@ export function ProfilePage() {
   }
 
   const save = async (e: FormEvent) => {
-    e.preventDefault(); if (usernameError) return; setLoading(true)
+    e.preventDefault(); if (usernameError) return; setLoading(true);let identitySaved=false
     try {
-      await Promise.all([avatarFile ? uploadProfileImage(avatarFile, 'avatar') : Promise.resolve(null), bannerFile ? uploadProfileImage(bannerFile, 'banner') : Promise.resolve(null)])
-      const result=await api<{user:User}>('/profile', { method: 'PATCH', body: JSON.stringify(form) })
-      updateUser(result.user); showToast({ tone: 'success', title: 'Profil disimpan', message: 'Identitas dan gambar publikmu sudah diperbarui.' })
-    } catch (error) { showToast({ tone: 'error', title: 'Profil belum disimpan', message: error instanceof Error ? error.message : 'Coba lagi.' }) }
+      await api<{user:User}>('/profile', { method: 'PATCH', body: JSON.stringify(form) });identitySaved=true
+      if(avatarFile)await uploadProfileImage(avatarFile,'avatar')
+      if(bannerFile)await uploadProfileImage(bannerFile,'banner')
+      const fresh=await api<{user:User}>('/auth/me')
+      updateUser(fresh.user);setAvatarFile(null);setBannerFile(null);if(avatarPreview)URL.revokeObjectURL(avatarPreview);if(bannerPreview)URL.revokeObjectURL(bannerPreview);setAvatarPreview(null);setBannerPreview(null);showToast({ tone: 'success', title: 'Profil disimpan', message: 'Identitas dan gambar publikmu sudah diperbarui.' })
+    } catch (error) { if(identitySaved){try{const fresh=await api<{user:User}>('/auth/me');updateUser(fresh.user)}catch{/* state dimuat ulang pada kunjungan berikutnya */}}showToast({ tone: 'error', title: identitySaved?'Sebagian profil tersimpan':'Profil belum disimpan', message: error instanceof Error ? error.message : 'Coba lagi.' }) }
     finally { setLoading(false) }
   }
 
   return <div className="content-page profile-edit-page page-enter">
     <div className="page-heading"><div><span className="eyebrow">ACCOUNT IDENTITY</span><h1>Atur profil</h1><p>Identitas ini digunakan untuk checkout, riwayat pembelian, dan layanan bantuan.</p></div><Link className="btn btn--secondary" to={`/u/${user.username}`}>Lihat profil publik</Link></div>
     <form onSubmit={save}>
-      <section className="profile-preview-card">
-        <div className="profile-preview-banner" style={{'--profile-accent':form.accent, backgroundImage: bannerPreview ? `url(${bannerPreview})` : undefined} as CSSProperties}><label className="upload-button"><Image/> Ganti banner<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => chooseFile(e.target.files?.[0], 'banner')}/></label></div>
-        <div className="profile-preview-content"><div className="avatar-edit"><span className="avatar avatar--xxl" style={{backgroundImage: avatarPreview ? `url(${avatarPreview})` : undefined}}>{!avatarPreview && user.avatar}</span><label><Camera/><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => chooseFile(e.target.files?.[0], 'avatar')}/></label></div><div><h2>{form.nickname || 'Nickname kamu'}</h2><span>@{form.username || 'username'}</span></div><span className="profile-preview-role"><ShieldCheck/> Akun terverifikasi</span></div>
+      <fieldset className="profile-save-fieldset" disabled={loading}><section className="profile-preview-card">
+        <div className="profile-preview-banner" style={{'--profile-accent':form.accent, backgroundImage: bannerSource?`url(${bannerSource})`:undefined} as CSSProperties}><label className="upload-button"><Image/> Ganti banner<input type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={e => chooseFile(e.target.files?.[0], 'banner')}/></label></div>
+        <div className="profile-preview-content"><div className="avatar-edit"><span className="avatar avatar--xxl" style={{backgroundImage:avatarSource?`url(${avatarSource})`:undefined}}>{!avatarSource&&user.avatar}</span><label><Camera/><input type="file" accept="image/jpeg,image/png,image/webp" disabled={loading} onChange={e => chooseFile(e.target.files?.[0], 'avatar')}/></label></div><div><h2>{form.nickname || 'Nickname kamu'}</h2><span>@{form.username || 'username'}</span></div><span className="profile-preview-role"><ShieldCheck/> Akun terverifikasi</span></div>
       </section>
       {fileError && <div className="form-alert form-alert--error">{fileError}</div>}
       <div className="profile-form-grid">
         <section className="form-panel"><div className="form-panel__head"><span><UserRound/></span><div><h2>Identitas</h2><p>Nama yang tampil pada profil dan riwayat transaksi.</p></div></div><div className="form-panel__body"><Input label="Nickname" name="nickname" value={form.nickname} maxLength={32} onChange={e => set('nickname', e.target.value)} hint={`${form.nickname.length}/32 karakter`}/><Input label="Username" name="username" value={form.username} onChange={e => set('username', e.target.value.toLowerCase())} error={usernameError} hint="URL profil dan referensi transaksi akan ikut diperbarui."/><label className="field"><span className="field__label">Bio</span><textarea value={form.bio} maxLength={160} onChange={e => set('bio', e.target.value)} rows={4}/><span className="field__hint">{form.bio.length}/160 karakter</span></label></div></section>
         <section className="form-panel"><div className="form-panel__head"><span><Camera/></span><div><h2>Tampilan profil</h2><p>Aksen kecil untuk memberi karakter.</p></div></div><div className="form-panel__body"><div className="accent-picker"><label>Warna aksen</label><div>{accents.map(color => <button type="button" key={color} onClick={() => set('accent',color)} style={{background:color}} className={form.accent === color ? 'active' : ''} aria-label={`Pilih aksen ${color}`}>{form.accent === color && <Check/>}</button>)}</div></div><div className="upload-rules"><Upload/><div><strong>Aturan upload</strong><span>Avatar: JPG/PNG/WebP, maks. 2MB.</span><span>Banner: rasio min. 2.5:1, maks. 5MB.</span><span>File diperiksa ulang oleh server.</span></div></div></div></section>
-      </div>
+      </div></fieldset>
       <div className="sticky-save"><span>Pastikan tampilan preview sudah sesuai.</span><Button type="submit" loading={loading}><Save/> Simpan perubahan</Button></div>
     </form>
   </div>

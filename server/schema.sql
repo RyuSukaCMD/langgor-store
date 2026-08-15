@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   nickname varchar(32) NOT NULL,
   bio varchar(160) NOT NULL DEFAULT '',
   avatar_url text,
+  avatar_path text,
   banner_url text,
+  banner_path text,
   accent varchar(7) NOT NULL DEFAULT '#8b5cf6',
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -43,10 +45,18 @@ CREATE TABLE IF NOT EXISTS public.products (
   publisher_name varchar(80) NOT NULL,
   publisher_username varchar(40) NOT NULL,
   publisher_verified boolean NOT NULL DEFAULT false,
+  image_url text,
+  image_path text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS products_catalog_idx ON public.products(status,created_at DESC);
+
+-- Safe upgrades for projects that ran an earlier schema revision.
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_path text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banner_path text;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url text;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_path text;
 
 CREATE TABLE IF NOT EXISTS public.orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

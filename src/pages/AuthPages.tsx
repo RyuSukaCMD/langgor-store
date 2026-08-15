@@ -111,7 +111,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             <Button type="submit" className="auth-submit" loading={loading}>{mode === 'login' ? 'Masuk' : mode === 'register' ? 'Buat akun' : mode === 'verify' ? 'Verifikasi email' : mode === 'forgot' ? 'Kirim tautan reset' : 'Simpan password'} <ArrowRight /></Button>
           </form>
           {(mode === 'login' || mode === 'register') && <p className="auth-switch">{mode === 'login' ? 'Belum punya akun?' : 'Sudah punya akun?'} <Link to={mode === 'login' ? '/register' : '/login'}>{mode === 'login' ? 'Daftar sekarang' : 'Masuk di sini'}</Link></p>}
-          <p className="auth-legal">Dengan melanjutkan, kamu menyetujui <a href="#terms">Syarat</a> dan <a href="#privacy">Kebijakan Privasi</a> Langgor.</p>
+          <p className="auth-legal">Dengan melanjutkan, kamu menyetujui <Link to="/terms">Syarat</Link> dan <Link to="/privacy">Kebijakan Privasi</Link> Langgor.</p>
         </> : <div className="auth-success"><span><Check /></span><h1>{mode === 'forgot' ? 'Cek inbox kamu' : 'Password diperbarui'}</h1><p>{mode === 'forgot' ? `Jika ${form.email} terdaftar, tautan reset akan tiba dalam beberapa menit.` : 'Kamu sekarang bisa masuk dengan password yang baru.'}</p><Link className="btn btn--primary" to="/login">Kembali ke login <ArrowRight /></Link></div>}
       </div>
     </main>

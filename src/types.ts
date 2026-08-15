@@ -17,6 +17,7 @@ export interface Product {
   specs: string[]
   icon: string
   accent: 'violet' | 'pink' | 'cyan' | 'amber'
+  imageUrl?: string
 }
 
 export interface User {

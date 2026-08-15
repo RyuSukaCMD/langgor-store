@@ -23,7 +23,7 @@ Service-role key hanya boleh berada di server dan tidak boleh memakai prefix `VI
 URL website dan cookie auth tidak memerlukan environment variables. Backend otomatis membaca `Host`, `Origin`, `X-Forwarded-Host`, dan `X-Forwarded-Proto`. HTTPS otomatis memakai `Secure`; localhost otomatis tetap dapat menggunakan HTTP. Nama cookie dikelola aplikasi: `langgor_access`, `langgor_refresh`, dan `langgor_csrf`.
 
 1. Buka Supabase SQL Editor.
-2. Jalankan seluruh isi `server/schema.sql`.
+2. Untuk project baru, jalankan seluruh isi `server/schema.sql`. Untuk project Langgor yang sudah aktif, jalankan migration terbaru di `supabase/migrations/20260815_media_replacement.sql` agar kolom path avatar, banner, dan foto produk tersedia.
 3. Daftar melalui `/register`.
 4. Jadikan akun pertama sebagai admin:
 
@@ -54,13 +54,13 @@ Tidak ada fallback produk, user, order, atau notifikasi hardcoded di application
 
 - **Supabase Auth**: register, login, recovery, refresh token.
 - **PostgreSQL**: users, profiles, products, orders, payments, inventory, deliveries, notifications, admin actions.
-- **Supabase Storage**: avatar dan banner tervalidasi server.
+- **Supabase Storage**: avatar, banner, dan foto produk tervalidasi server dengan penggantian aman (upload baru → update database → hapus file lama).
 - **Database function**: checkout mengunci product row, membaca harga server, memeriksa stok/saldo, dan membuat order secara atomik.
 - **RLS**: ownership policy untuk profil, order, pembayaran, delivery, dan notifikasi.
 
 ## Route utama
 
-- Publik: `/`, `/store/cookies`, `/product/:id`, `/u/:username`
+- Publik: `/`, `/store/cookies`, `/product/:id`, `/u/:username`, `/terms`, `/privacy`
 - Auth: `/login`, `/register`, `/forgot-password`, `/reset-password`
 - Dashboard: `/dashboard`, `/purchases`, `/profile`
 - Admin: `/admin`
@@ -68,7 +68,7 @@ Tidak ada fallback produk, user, order, atau notifikasi hardcoded di application
 ## Struktur
 
 ```text
-api/[...path].ts   Vercel Express function
+api/index.ts       Vercel Express function
 src/
   components/      shared UI and navigation
   context/         auth, products, toast
@@ -86,7 +86,7 @@ server/
 Route `/admin` dilindungi client guard dan backend RBAC. Semua operasi berikut menulis langsung ke Supabase:
 
 - tambah, edit, dan hapus produk;
-- harga, stok, status, spesifikasi, ikon, dan aksen;
+- harga, stok, status, spesifikasi, ikon, aksen, serta upload/ganti/hapus foto produk;
 - role `user`, `moderator`, `admin`;
 - suspend/restore akun;
 - transaksi dan audit action.
@@ -114,6 +114,7 @@ REDIS_URL=rediss://default:password@host:6379
 ## Quality checks
 
 ```bash
+npm run lint
 npm run build
 npm audit --omit=dev
 ```

@@ -6,8 +6,8 @@ import { StatusBadge } from './StatusBadge'
 
 export function ProductCard({ product, layout = 'grid' }: { product: Product; layout?: 'grid' | 'row' }) {
   return <article className={`product-card product-card--${layout}`}>
-    <div className={`product-art product-art--${product.accent}`} aria-hidden="true">
-      <span>{product.icon}</span><small>{product.kind === 'cookie' ? 'COOKIE DROP' : 'ACCOUNT LISTING'}</small>
+    <div className={`product-art product-art--${product.accent} ${product.imageUrl?'has-image':''}`}>
+      {product.imageUrl&&<img src={product.imageUrl} alt={`Foto ${product.name}`} loading="lazy"/>}<span>{product.icon}</span><small>COOKIE DROP</small>
     </div>
     <div className="product-card__content">
       <div className="product-card__top"><span className="product-category">{product.category}</span><StatusBadge status={product.status} /></div>

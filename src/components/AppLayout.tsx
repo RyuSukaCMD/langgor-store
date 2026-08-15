@@ -32,7 +32,7 @@ export function AppLayout() {
         </div>
       </div>
       <div className="sidebar__profile">
-        <Link to="/profile" className="mini-profile"><span className="avatar avatar--sm">{user.avatar}</span><span><strong>{user.nickname}</strong><small>@{user.username}</small></span></Link>
+        <Link to="/profile" className="mini-profile"><span className="avatar avatar--sm" style={user.avatarUrl?{backgroundImage:`url(${user.avatarUrl})`}:undefined}>{user.avatarUrl?'':user.avatar}</span><span><strong>{user.nickname}</strong><small>@{user.username}</small></span></Link>
         <button className="icon-btn" onClick={handleLogout} aria-label="Keluar"><LogOut /></button>
       </div>
     </aside>
@@ -41,7 +41,7 @@ export function AppLayout() {
       <header className="app-topbar">
         <button className="icon-btn app-menu" onClick={() => setOpen(true)} aria-label="Buka menu"><Menu /></button>
         <div className="app-topbar__crumb"><span className="topbar-kicker">LANGGOR /</span><span> dashboard</span></div>
-        <div className="app-topbar__actions"><Notifications /><Link to="/profile" className="avatar avatar--sm" aria-label="Profil saya">{user.avatar}</Link></div>
+        <div className="app-topbar__actions"><Notifications /><Link to="/profile" className="avatar avatar--sm" style={user.avatarUrl?{backgroundImage:`url(${user.avatarUrl})`}:undefined} aria-label="Profil saya">{user.avatarUrl?'':user.avatar}</Link></div>
       </header>
       <main className="app-content"><Outlet /></main>
       <nav className="mobile-dock mobile-dock--game" aria-label="Navigasi mobile">
