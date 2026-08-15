@@ -24,6 +24,7 @@ export default function App() {
     <Route path="/" element={<LandingPage />} />
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
+    <Route path="/verify-email" element={<AuthPage mode="verify" />} />
     <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
     <Route path="/reset-password" element={<AuthPage mode="reset" />} />
     <Route path="/store/cookies" element={<StorePage kind="cookie" />} />

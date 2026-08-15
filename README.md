@@ -44,6 +44,10 @@ npm run build
 NODE_ENV=production npm run preview
 ```
 
+## Email OTP
+
+Registrasi menggunakan OTP 6 digit Supabase Auth. Template tersedia di `supabase/templates/confirm-signup.html`; panduan Resend Free dan sender `otp@langgor.my.id` tersedia di `docs/EMAIL_OTP_SETUP.md`.
+
 ## Data architecture
 
 Tidak ada fallback produk, user, order, atau notifikasi hardcoded di application runtime. Jika Supabase belum dikonfigurasi, API mengembalikan status konfigurasi dan UI menampilkan loading/error/empty state.

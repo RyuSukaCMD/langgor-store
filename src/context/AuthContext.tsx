@@ -7,6 +7,8 @@ type AuthContextValue = {
   loading: boolean
   login: (identifier: string, password: string, remember: boolean) => Promise<User>
   register: (payload: { username: string; email: string; password: string }) => Promise<User | null>
+  verifyEmail: (email: string, token: string) => Promise<User>
+  resendOtp: (email: string) => Promise<void>
   logout: () => Promise<void>
   updateUser: (updates: Partial<User>) => void
 }
@@ -33,6 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user
   }
 
+  const verifyEmail = async (email: string, token: string) => {
+    const result = await api<{ user: User }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email, token }) })
+    setUser(result.user)
+    return result.user
+  }
+
+  const resendOtp = async (email: string) => {
+    await api('/auth/resend-otp', { method: 'POST', body: JSON.stringify({ email }) })
+  }
+
   const logout = async () => {
     await api('/auth/logout', { method: 'POST' })
     setUser(null)
@@ -40,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (updates: Partial<User>) => setUser(prev => prev ? { ...prev, ...updates } : prev)
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading, login, register, verifyEmail, resendOtp, logout, updateUser }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
