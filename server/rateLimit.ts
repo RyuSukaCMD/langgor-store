@@ -1,7 +1,7 @@
 import rateLimit, { type Store } from 'express-rate-limit'
 import { RedisStore } from 'rate-limit-redis'
 import { createClient, type RedisClientType } from 'redis'
-import { config } from './config'
+import { config } from './config.js'
 
 let redis: RedisClientType | null = null
 

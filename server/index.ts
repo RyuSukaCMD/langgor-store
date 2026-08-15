@@ -1,8 +1,8 @@
 import path from 'node:path'
 import express from 'express'
 import { createServer } from 'vite'
-import { config } from './config'
-import { app, isProd, root } from './app'
+import { config } from './config.js'
+import { app, isProd, root } from './app.js'
 
 if (isProd) {
   app.use(express.static(path.join(root, 'dist'), { maxAge: '1y', immutable: true, index: false }))

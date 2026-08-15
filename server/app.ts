@@ -4,10 +4,10 @@ import cookieParser from 'cookie-parser'
 import express, { type NextFunction, type Request, type Response } from 'express'
 import helmet from 'helmet'
 import { z } from 'zod'
-import { config, configurationIssues } from './config'
-import { createRateLimiters } from './rateLimit'
-import { createSupabaseAuthClient, getSupabaseAdmin, isSupabaseConfigured } from './supabase'
-import type { Notification, Order, Product, User } from '../src/types'
+import { config, configurationIssues } from './config.js'
+import { createRateLimiters } from './rateLimit.js'
+import { createSupabaseAuthClient, getSupabaseAdmin, isSupabaseConfigured } from './supabase.js'
+import type { Notification, Order, Product, User } from '../src/types.js'
 
 export const isProd = config.isProduction
 export const root = process.cwd()
