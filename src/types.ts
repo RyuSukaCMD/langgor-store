@@ -55,3 +55,10 @@ export interface Notification {
   createdAt: string
   read: boolean
 }
+
+export interface MaintenanceStatus {
+  enabled: boolean
+  reason: string
+  estimatedEndAt: string | null
+  updatedAt: string | null
+}

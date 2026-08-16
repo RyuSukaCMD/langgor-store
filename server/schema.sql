@@ -129,6 +129,16 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 CREATE INDEX IF NOT EXISTS notifications_user_idx ON public.notifications(user_id,read_at,created_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.site_settings (
+  key text PRIMARY KEY CHECK (key = 'maintenance'),
+  maintenance_enabled boolean NOT NULL DEFAULT false,
+  maintenance_reason varchar(300) NOT NULL DEFAULT '',
+  maintenance_estimated_end_at timestamptz,
+  updated_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO public.site_settings(key) VALUES('maintenance') ON CONFLICT(key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS public.admin_actions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_id uuid NOT NULL REFERENCES public.users(id) ON DELETE RESTRICT,
@@ -207,7 +217,10 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cookie_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cookie_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_actions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.site_settings FROM anon, authenticated;
+GRANT ALL ON TABLE public.site_settings TO service_role;
 
 DROP POLICY IF EXISTS users_read_self ON public.users;
 DROP POLICY IF EXISTS profiles_public_read ON public.profiles;

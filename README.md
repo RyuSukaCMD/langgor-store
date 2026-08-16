@@ -23,7 +23,7 @@ Service-role key hanya boleh berada di server dan tidak boleh memakai prefix `VI
 URL website dan cookie auth tidak memerlukan environment variables. Backend otomatis membaca `Host`, `Origin`, `X-Forwarded-Host`, dan `X-Forwarded-Proto`. HTTPS otomatis memakai `Secure`; localhost otomatis tetap dapat menggunakan HTTP. Nama cookie dikelola aplikasi: `langgor_access`, `langgor_refresh`, dan `langgor_csrf`.
 
 1. Buka Supabase SQL Editor.
-2. Untuk project baru, jalankan seluruh isi `server/schema.sql`. Untuk project Langgor yang sudah aktif, jalankan migration terbaru di `supabase/migrations/20260815_media_replacement.sql` agar kolom path avatar, banner, dan foto produk tersedia.
+2. Untuk project baru, jalankan seluruh isi `server/schema.sql`. Untuk project Langgor yang sudah aktif, jalankan migration di `supabase/migrations/20260815_media_replacement.sql` dan `supabase/migrations/20260816_maintenance_mode.sql`.
 3. Daftar melalui `/register`.
 4. Jadikan akun pertama sebagai admin:
 
@@ -89,7 +89,8 @@ Route `/admin` dilindungi client guard dan backend RBAC. Semua operasi berikut m
 - harga, stok, status, spesifikasi, ikon, aksen, serta upload/ganti/hapus foto produk;
 - role `user`, `moderator`, `admin`;
 - suspend/restore akun;
-- transaksi dan audit action.
+- transaksi dan audit action;
+- mode maintenance dengan alasan, perkiraan selesai opsional, dan bypass untuk admin/moderator.
 
 ## Security
 

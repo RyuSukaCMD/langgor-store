@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { config, configurationIssues } from './config.js'
 import { createRateLimiters } from './rateLimit.js'
 import { createSupabaseAuthClient, getSupabaseAdmin, isSupabaseConfigured } from './supabase.js'
-import type { Notification, Order, Product, User } from '../src/types.js'
+import type { MaintenanceStatus, Notification, Order, Product, User } from '../src/types.js'
 
 export const isProd = config.isProduction
 export const root = process.cwd()
@@ -75,6 +75,20 @@ app.use(async(req:AuthedRequest,res,next)=>{
 const requireAuth=(req:AuthedRequest,res:Response,next:NextFunction)=>{if(!req.user)return res.status(401).json({message:'Silakan masuk untuk melanjutkan.'});if(req.user.status!=='active')return res.status(403).json({message:'Akun tidak aktif. Hubungi dukungan.'});next()}
 const requireAdmin=(req:AuthedRequest,res:Response,next:NextFunction)=>{if(!req.user)return res.status(401).json({message:'Silakan masuk untuk melanjutkan.'});if(req.user.status!=='active'||req.user.role!=='admin')return res.status(403).json({message:'Akses admin diperlukan.'});next()}
 
+const maintenanceDefault:MaintenanceStatus={enabled:false,reason:'',estimatedEndAt:null,updatedAt:null}
+let maintenanceCache:MaintenanceStatus|null=null
+let maintenanceCacheUntil=0
+const readMaintenance=async(force=false):Promise<MaintenanceStatus>=>{
+  if(!isSupabaseConfigured)return maintenanceDefault
+  if(!force&&maintenanceCache&&Date.now()<maintenanceCacheUntil)return maintenanceCache
+  const {data,error}=await getSupabaseAdmin().from('site_settings').select('maintenance_enabled,maintenance_reason,maintenance_estimated_end_at,updated_at').eq('key','maintenance').maybeSingle()
+  if(error||!data){if(error)console.error('[maintenance]',error.message);maintenanceCache=maintenanceDefault;maintenanceCacheUntil=Date.now()+10_000;return maintenanceDefault}
+  maintenanceCache={enabled:Boolean(data.maintenance_enabled),reason:String(data.maintenance_reason||''),estimatedEndAt:data.maintenance_estimated_end_at?String(data.maintenance_estimated_end_at):null,updatedAt:data.updated_at?String(data.updated_at):null};maintenanceCacheUntil=Date.now()+10_000;return maintenanceCache
+}
+const maintenanceInputSchema=z.object({enabled:z.boolean(),reason:z.string().trim().max(300),estimatedEndAt:z.string().datetime().nullable()}).superRefine((value,ctx)=>{if(value.enabled&&value.reason.length<5)ctx.addIssue({code:'custom',path:['reason'],message:'Alasan maintenance minimal 5 karakter.'});if(value.enabled&&value.estimatedEndAt&&new Date(value.estimatedEndAt).getTime()<=Date.now())ctx.addIssue({code:'custom',path:['estimatedEndAt'],message:'Perkiraan selesai harus berada di waktu mendatang.'})})
+const maintenanceAllowedPaths=new Set(['/maintenance','/health','/auth/login','/auth/me','/auth/logout','/auth/forgot','/auth/reset','/auth/verify-email','/auth/resend-otp','/admin/maintenance'])
+app.use('/api',async(req:AuthedRequest,res,next)=>{if(req.method==='OPTIONS'||maintenanceAllowedPaths.has(req.path))return next();try{const maintenance=await readMaintenance();if(!maintenance.enabled||req.user?.role==='admin'||req.user?.role==='moderator')return next();return res.status(503).json({message:maintenance.reason||'Layanan sedang dalam pemeliharaan.',maintenance:true,estimatedEndAt:maintenance.estimatedEndAt})}catch(error){next(error)}})
+
 const mapProduct=(row:any):Product=>({id:String(row.id),name:String(row.name),kind:'cookie',category:String(row.category),description:String(row.description),price:Number(row.price),stock:Number(row.stock),status:row.status,seller:{name:String(row.publisher_name),username:String(row.publisher_username),verified:Boolean(row.publisher_verified),rating:Number(row.rating)},rating:Number(row.rating),sold:Number(row.sold),createdAt:String(row.created_at),specs:Array.isArray(row.specs)?row.specs:[],icon:String(row.icon),accent:row.accent,imageUrl:row.image_url||undefined})
 const productColumns='*'
 const relativeTime=(date:string)=>{const seconds=Math.max(1,Math.floor((Date.now()-new Date(date).getTime())/1000));if(seconds<60)return`${seconds} detik`;if(seconds<3600)return`${Math.floor(seconds/60)} menit`;if(seconds<86400)return`${Math.floor(seconds/3600)} jam`;return`${Math.floor(seconds/86400)} hari`}
@@ -87,6 +101,7 @@ const productInputSchema=z.object({name:z.string().min(4).max(80),category:z.str
 const userAdminUpdateSchema=z.object({role:z.enum(['user','moderator','admin']).optional(),status:z.enum(['active','suspended']).optional()}).refine(value=>Object.keys(value).length>0,'Tidak ada perubahan.')
 
 app.get('/api/health',(_req,res)=>res.json({ok:true,time:new Date().toISOString(),environment:config.env,services:{supabase:isSupabaseConfigured?'configured':'not-configured',rateLimit:config.rateLimit.store},configurationIssues}))
+app.get('/api/maintenance',async(_req,res)=>res.json({maintenance:await readMaintenance()}))
 app.get('/api/products',async(_req,res)=>{if(!isSupabaseConfigured)return res.json({products:[],configured:false,message:'Katalog belum dapat digunakan.'});const {data,error}=await getSupabaseAdmin().from('products').select(productColumns).order('created_at',{ascending:true});if(error)return res.status(500).json({message:'Katalog gagal dimuat.'});res.json({products:(data||[]).map(mapProduct),configured:true})})
 app.get('/api/users/:username/public',requireSupabase,async(req,res)=>{const {data,error}=await getSupabaseAdmin().from('users').select('username,created_at,profiles(nickname,bio,avatar_url,banner_url,accent)').eq('username',String(req.params.username).toLowerCase()).eq('status','active').maybeSingle();if(error||!data)return res.status(404).json({message:'Profil tidak ditemukan.'});const profile=profileFromRelation((data as any).profiles) as any;res.json({profile:{username:data.username,nickname:profile.nickname||data.username,bio:profile.bio||'',avatarUrl:profile.avatar_url||null,bannerUrl:profile.banner_url||null,accent:profile.accent||null,joinedAt:data.created_at}})})
 
@@ -146,6 +161,13 @@ app.post('/api/orders',requireSupabase,requireAuth,async(req:AuthedRequest,res)=
 app.get('/api/notifications',requireSupabase,requireAuth,async(req:AuthedRequest,res)=>{const {data,error}=await getSupabaseAdmin().from('notifications').select('id,type,title,body,read_at,created_at').eq('user_id',req.user!.id).order('created_at',{ascending:false}).limit(30);if(error)return res.status(500).json({message:'Notifikasi gagal dimuat.'});const notifications:Notification[]=(data||[]).map((row:any)=>({id:String(row.id),type:row.type,title:String(row.title),message:String(row.body),time:relativeTime(row.created_at),createdAt:String(row.created_at),read:Boolean(row.read_at)}));res.json({notifications})})
 app.patch('/api/notifications/:id/read',requireSupabase,requireAuth,async(req:AuthedRequest,res)=>{await getSupabaseAdmin().from('notifications').update({read_at:new Date().toISOString()}).eq('id',String(req.params.id)).eq('user_id',req.user!.id);res.json({ok:true})})
 app.post('/api/notifications/read-all',requireSupabase,requireAuth,async(req:AuthedRequest,res)=>{await getSupabaseAdmin().from('notifications').update({read_at:new Date().toISOString()}).eq('user_id',req.user!.id).is('read_at',null);res.json({ok:true})})
+
+app.patch('/api/admin/maintenance',requireSupabase,requireAdmin,async(req:AuthedRequest,res)=>{
+  const body=parse(maintenanceInputSchema,req.body,res);if(!body||!req.user)return
+  const before=await readMaintenance(true);const db=getSupabaseAdmin();const payload={key:'maintenance',maintenance_enabled:body.enabled,maintenance_reason:body.enabled?body.reason:'',maintenance_estimated_end_at:body.enabled?body.estimatedEndAt:null,updated_by:req.user.id,updated_at:new Date().toISOString()}
+  const result=await db.from('site_settings').upsert(payload,{onConflict:'key'}).select('maintenance_enabled,maintenance_reason,maintenance_estimated_end_at,updated_at').single();if(result.error){console.error('[maintenance] update failed:',result.error.message);return res.status(500).json({message:'Pengaturan maintenance belum dapat disimpan. Pastikan pembaruan sistem sudah diterapkan.'})}
+  maintenanceCache={enabled:Boolean(result.data.maintenance_enabled),reason:String(result.data.maintenance_reason||''),estimatedEndAt:result.data.maintenance_estimated_end_at?String(result.data.maintenance_estimated_end_at):null,updatedAt:String(result.data.updated_at)};maintenanceCacheUntil=Date.now()+10_000;await audit(req,'maintenance.update','site','maintenance',before,maintenanceCache);res.json({maintenance:maintenanceCache})
+})
 
 app.get('/api/admin/users',requireSupabase,requireAdmin,async(_req,res)=>{const {data,error}=await getSupabaseAdmin().from('users').select('id,username,email,role,status,balance,created_at,profiles(nickname,avatar_url)').order('created_at',{ascending:false});if(error)return res.status(500).json({message:'Pengguna gagal dimuat.'});res.json({users:(data||[]).map((row:any)=>{const profile=profileFromRelation(row.profiles) as any;const nickname=String(profile.nickname||row.username);return{id:String(row.id),username:String(row.username),email:String(row.email),nickname,role:row.role,status:row.status,balance:Number(row.balance),joinedAt:String(row.created_at),avatar:nickname.slice(0,2).toUpperCase(),avatarUrl:profile.avatar_url||undefined}})})})
 app.patch('/api/admin/users/:id',requireSupabase,requireAdmin,async(req:AuthedRequest,res)=>{const body=parse(userAdminUpdateSchema,req.body,res);if(!body||!req.user)return;const id=String(req.params.id);if(id===req.user.id&&(body.status==='suspended'||(body.role&&body.role!=='admin')))return res.status(422).json({message:'Admin tidak dapat menangguhkan atau menurunkan role akun sendiri.'});const db=getSupabaseAdmin();const before=await db.from('users').select('role,status').eq('id',id).maybeSingle();if(!before.data)return res.status(404).json({message:'Pengguna tidak ditemukan.'});const update=await db.from('users').update(body).eq('id',id).select('id,role,status').single();if(update.error)return res.status(500).json({message:'Pengguna belum diperbarui.'});await audit(req,'user.update','user',id,before.data,update.data);res.json({user:update.data})})

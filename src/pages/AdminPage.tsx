@@ -1,6 +1,6 @@
 import { LazyMotion, domAnimation, useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
-import { Activity, ArrowRight, CircleDollarSign, Cookie, Edit3, Eye, Image as ImageIcon, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, Trash2, UserCog, Users } from 'lucide-react'
+import { Activity, ArrowRight, CircleDollarSign, Clock3, Cookie, Edit3, Eye, Image as ImageIcon, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, Trash2, UserCog, Users, Wrench } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Badge, Button, Input, Modal } from '../components/UI'
 import { StatusBadge } from '../components/StatusBadge'
@@ -8,17 +8,19 @@ import { OrderDetailModal } from '../components/OrderDetailModal'
 import { useAuth } from '../context/AuthContext'
 import { useProducts } from '../context/ProductContext'
 import { useToast } from '../context/ToastContext'
+import { useMaintenance } from '../context/MaintenanceContext'
 import { rupiah } from '../data'
 import { api, deleteProductImage, uploadProductImage } from '../lib/api'
 import type { Order, Product, ProductStatus } from '../types'
 import './admin-redesign.css'
 
-type AdminTab = 'overview' | 'products' | 'users' | 'orders'
+type AdminTab = 'overview' | 'products' | 'users' | 'orders' | 'maintenance'
 type ManagedUser = { id:string;username:string;email:string;nickname:string;role:'user'|'moderator'|'admin';status:'active'|'suspended';balance:number;joinedAt:string;avatar:string;avatarUrl?:string }
 type ProductForm = { name:string;category:string;description:string;price:string;stock:string;status:ProductStatus;specs:string;icon:string;accent:Product['accent'] }
 
 const emptyProduct:ProductForm={name:'',category:'',description:'',price:'',stock:'0',status:'ready',specs:'',icon:'',accent:'violet'}
 const panelMotion={initial:{opacity:0,y:10},animate:{opacity:1,y:0},exit:{opacity:0,y:-6}}
+const localDateTimeValue=(value:string|null)=>{if(!value)return'';const date=new Date(value);const offset=date.getTimezoneOffset()*60_000;return new Date(date.getTime()-offset).toISOString().slice(0,16)}
 
 export function AdminPage() {
   const [tab,setTab]=useState<AdminTab>('overview')
@@ -37,10 +39,15 @@ export function AdminPage() {
   const [savingProduct,setSavingProduct]=useState(false)
   const [deleteProduct,setDeleteProduct]=useState<Product|null>(null)
   const [deleting,setDeleting]=useState(false)
+  const [maintenanceForm,setMaintenanceForm]=useState({enabled:false,reason:'',estimatedEndAt:''})
+  const [savingMaintenance,setSavingMaintenance]=useState(false)
   const { products,loading:productsLoading,error:productsError,refreshProducts }=useProducts()
   const { user:currentUser }=useAuth()
   const { showToast }=useToast()
+  const {maintenance,updateMaintenance}=useMaintenance()
   const reduceMotion=useReducedMotion()
+
+  useEffect(()=>setMaintenanceForm({enabled:maintenance.enabled,reason:maintenance.reason,estimatedEndAt:localDateTimeValue(maintenance.estimatedEndAt)}),[maintenance])
 
   const loadUsers=useCallback(async()=>{
     setLoadingUsers(true)
@@ -91,11 +98,18 @@ export function AdminPage() {
     finally{setBusyUser('')}
   }
 
+  const saveMaintenance=async(event:FormEvent)=>{
+    event.preventDefault();if(maintenanceForm.enabled&&maintenanceForm.reason.trim().length<5){showToast({tone:'error',title:'Alasan belum lengkap',message:'Tulis alasan maintenance minimal 5 karakter.'});return}setSavingMaintenance(true)
+    try{await updateMaintenance({enabled:maintenanceForm.enabled,reason:maintenanceForm.reason.trim(),estimatedEndAt:maintenanceForm.enabled&&maintenanceForm.estimatedEndAt?new Date(maintenanceForm.estimatedEndAt).toISOString():null});showToast({tone:'success',title:maintenanceForm.enabled?'Maintenance diaktifkan':'Maintenance dinonaktifkan',message:maintenanceForm.enabled?'Pengguna biasa akan melihat halaman maintenance.':'Website kembali tersedia untuk semua pengguna.'})}
+    catch(error){showToast({tone:'error',title:'Pengaturan belum disimpan',message:error instanceof Error?error.message:'Coba lagi.'})}
+    finally{setSavingMaintenance(false)}
+  }
+
   return <LazyMotion features={domAnimation}><div className="content-page admin-page admin-v2 page-enter">
     <section className="admin-banner admin-v2__banner"><div><span className="eyebrow"><i/> ADMIN CONTROL / LIVE</span><h1>Kontrol store, tanpa beban.</h1><p>Produk, role pengguna, stok, dan transaksi dalam satu ruang yang tetap ringan.</p></div><div className="admin-identity"><ShieldCheck/><span><small>ACTIVE ROLE</small><strong>Administrator</strong></span></div></section>
 
     <nav className="admin-tabs" aria-label="Navigasi admin">
-      {([['overview','Ringkasan',Activity],['products','Produk',Cookie],['users','Pengguna',Users],['orders','Transaksi',ShoppingBag]] as const).map(([id,label,Icon])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}><Icon/>{label}{id==='products'&&<span>{products.length}</span>}</button>)}
+      {([['overview','Ringkasan',Activity],['products','Produk',Cookie],['users','Pengguna',Users],['orders','Transaksi',ShoppingBag],['maintenance','Maintenance',Wrench]] as const).map(([id,label,Icon])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}><Icon/>{label}{id==='products'&&<span>{products.length}</span>}</button>)}
     </nav>
 
     {tab==='overview'&&<m.div {...panelMotion} className="admin-v2__panel">
@@ -106,7 +120,7 @@ export function AdminPage() {
         <article><span className="admin-metric__icon amber"><CircleDollarSign/></span><span><small>ORDER VALUE</small><strong>{rupiah(revenue)}</strong><em>Riwayat tampil</em></span></article>
       </section>
       <section className="admin-v2__overview">
-        <article className="admin-v2__quick"><div className="card-heading"><div><span className="eyebrow">QUICK CONTROL</span><h2>Yang sering dibutuhkan</h2></div></div><div><button onClick={openCreate}><span><Plus/></span><b>Tambah produk</b><small>Buat Cookie baru</small><ArrowRight/></button><button onClick={()=>setTab('users')}><span><UserCog/></span><b>Atur role</b><small>User, moderator, admin</small><ArrowRight/></button><button onClick={()=>setTab('products')}><span><Package/></span><b>Kelola stok</b><small>Harga dan availability</small><ArrowRight/></button></div></article>
+        <article className="admin-v2__quick"><div className="card-heading"><div><span className="eyebrow">QUICK CONTROL</span><h2>Yang sering dibutuhkan</h2></div></div><div><button onClick={openCreate}><span><Plus/></span><b>Tambah produk</b><small>Buat Cookie baru</small><ArrowRight/></button><button onClick={()=>setTab('users')}><span><UserCog/></span><b>Atur role</b><small>User, moderator, admin</small><ArrowRight/></button><button onClick={()=>setTab('products')}><span><Package/></span><b>Kelola stok</b><small>Harga dan availability</small><ArrowRight/></button><button onClick={()=>setTab('maintenance')}><span><Wrench/></span><b>Maintenance</b><small>Atur akses sementara</small><ArrowRight/></button></div></article>
         <article className="admin-v2__activity"><div className="card-heading"><div><span className="eyebrow">RINGKASAN LAYANAN</span><h2>{productsError?'Katalog perlu diperiksa.':productsLoading?'Memeriksa katalog…':'Katalog dalam kondisi normal.'}</h2></div><Badge tone={productsError?'error':productsLoading?'warning':'success'}>{productsError?'Gangguan':productsLoading?'Memuat':'Aktif'}</Badge></div><div className="admin-v2__health"><span><i/><b>Katalog publik</b><small>Siap</small></span><span><i/><b>Akses pengelola</b><small>Terlindungi</small></span><span><i/><b>Riwayat perubahan</b><small>Tercatat</small></span></div></article>
       </section>
     </m.div>}
@@ -124,6 +138,11 @@ export function AdminPage() {
     {tab==='orders'&&<m.section {...panelMotion} className="admin-v2__data">
       <div className="admin-v2__data-head"><div><span className="eyebrow">TRANSACTION CONTROL</span><h2>Transaksi terbaru</h2><p>Nominal checkout berasal dari katalog server.</p></div></div>
       <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Order</th><th>Produk</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th></th></tr></thead><tbody>{orders.map(order=><tr key={order.id}><td><strong>{order.id}</strong></td><td>{order.productName}</td><td>{order.date}</td><td><strong>{rupiah(order.price)}</strong></td><td><StatusBadge status={order.status}/></td><td><button className="icon-btn icon-btn--sm" onClick={()=>setSelectedOrder(order)} aria-label={`Lihat ${order.id}`}><Eye/></button></td></tr>)}</tbody></table></div>
+    </m.section>}
+
+    {tab==='maintenance'&&<m.section {...panelMotion} className="admin-v2__data admin-maintenance">
+      <div className="admin-v2__data-head"><div><span className="eyebrow">SITE AVAILABILITY</span><h2>Mode maintenance</h2><p>Batasi akses pengguna sementara saat perbaikan berlangsung.</p></div><Badge tone={maintenance.enabled?'warning':'success'}>{maintenance.enabled?'Aktif':'Website tersedia'}</Badge></div>
+      <div className="admin-maintenance__grid"><form onSubmit={saveMaintenance}><fieldset disabled={savingMaintenance}><label className="admin-maintenance-toggle"><input type="checkbox" checked={maintenanceForm.enabled} onChange={event=>setMaintenanceForm(form=>({...form,enabled:event.target.checked}))}/><span><i/><b>{maintenanceForm.enabled?'Maintenance aktif':'Maintenance nonaktif'}</b><small>{maintenanceForm.enabled?'Pengguna biasa akan melihat halaman maintenance.':'Semua pengguna dapat mengakses website.'}</small></span></label><label className="field"><span className="field__label">Alasan maintenance</span><textarea rows={4} maxLength={300} disabled={!maintenanceForm.enabled} required={maintenanceForm.enabled} value={maintenanceForm.reason} onChange={event=>setMaintenanceForm(form=>({...form,reason:event.target.value}))} placeholder="Contoh: Kami sedang meningkatkan kestabilan layanan."/><span className="field__hint">{maintenanceForm.reason.length}/300 karakter</span></label><label className="field"><span className="field__label">Perkiraan selesai — opsional</span><span className="field__control"><Clock3/><input type="datetime-local" disabled={!maintenanceForm.enabled} value={maintenanceForm.estimatedEndAt} onChange={event=>setMaintenanceForm(form=>({...form,estimatedEndAt:event.target.value}))}/></span><span className="field__hint">Kosongkan jika belum ada perkiraan waktu.</span></label><Button type="submit" loading={savingMaintenance}><Wrench/> Simpan pengaturan</Button></fieldset></form><aside><span className="admin-maintenance__preview-icon"><Wrench/></span><small>PREVIEW STATUS</small><h3>{maintenanceForm.enabled?'Website sedang dalam maintenance':'Website beroperasi normal'}</h3><p>{maintenanceForm.enabled?(maintenanceForm.reason||'Alasan maintenance akan tampil di sini.'):'Halaman dapat diakses oleh seluruh pengguna.'}</p>{maintenanceForm.enabled&&maintenanceForm.estimatedEndAt&&<span className="admin-maintenance__time"><Clock3/> Perkiraan {new Date(maintenanceForm.estimatedEndAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}<div className="admin-maintenance__bypass"><ShieldCheck/><span><strong>Admin dan moderator tetap dapat masuk.</strong><small>Pengguna biasa dan pengunjung akan dialihkan ke halaman maintenance.</small></span></div></aside></div>
     </m.section>}
 
     <OrderDetailModal order={selectedOrder} onClose={()=>setSelectedOrder(null)}/>

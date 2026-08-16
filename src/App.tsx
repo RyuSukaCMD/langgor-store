@@ -3,6 +3,8 @@ import { LoaderCircle } from 'lucide-react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { AdminRoute, ProtectedRoute } from './components/RouteGuards'
+import { MaintenanceGate } from './components/MaintenanceGate'
+import { ProductProvider } from './context/ProductContext'
 
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const AuthPage = lazy(() => import('./pages/AuthPages').then(m => ({ default: m.AuthPage })))
@@ -21,7 +23,13 @@ function RouteFallback() {
 }
 
 export default function App() {
-  return <Suspense fallback={<RouteFallback />}><Routes>
+  const staffAuth={
+    '/login':<Suspense fallback={<RouteFallback/>}><AuthPage mode="login"/></Suspense>,
+    '/forgot-password':<Suspense fallback={<RouteFallback/>}><AuthPage mode="forgot"/></Suspense>,
+    '/reset-password':<Suspense fallback={<RouteFallback/>}><AuthPage mode="reset"/></Suspense>,
+    '/verify-email':<Suspense fallback={<RouteFallback/>}><AuthPage mode="verify"/></Suspense>,
+  }
+  return <MaintenanceGate staffAuth={staffAuth}><ProductProvider><Suspense fallback={<RouteFallback />}><Routes>
     <Route path="/" element={<LandingPage />} />
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
@@ -45,5 +53,5 @@ export default function App() {
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />
-  </Routes></Suspense>
+  </Routes></Suspense></ProductProvider></MaintenanceGate>
 }
