@@ -3,6 +3,7 @@ import { ArrowRight, Check, ChevronDown, Cookie, LockKeyhole, MousePointer2, Pac
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
+import { StockTicker } from '../components/StockTicker'
 import { useProducts } from '../context/ProductContext'
 import { rupiah } from '../data'
 import { useLowPowerMode } from '../lib/useLowPowerMode'
@@ -64,7 +65,7 @@ export function LandingPage() {
             <motion.div className="gate-float gate-float--bottom" animate={animateDecorations ? { y:[0,7,0] } : {}} transition={{ duration:3.6,repeat:Infinity }}><Zap/><span><b>Pesanan terlindungi</b><small>Diperiksa sebelum dikirim</small></span></motion.div>
           </motion.div>
         </div>
-        <div className="live-rail"><div className="live-rail__track">{[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}><i/> {product.name.toUpperCase()} • {product.stock} STOK • {product.sold.toLocaleString('id-ID')} TERJUAL</span>)}</div></div>
+        <StockTicker products={products}/>
       </section>
 
       <section className="game-section game-plans" id="spesifikasi"><div className="container">
