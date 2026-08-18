@@ -1,36 +1,38 @@
-import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion, useScroll } from 'motion/react'
 import { ArrowRight, Check, ChevronDown, Cookie, LockKeyhole, MousePointer2, PackageCheck, Radar, RefreshCw, ShieldCheck, ShoppingBag, Sparkles, TimerReset, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PublicHeader } from '../components/PublicHeader'
 import { useProducts } from '../context/ProductContext'
 import { rupiah } from '../data'
+import { useLowPowerMode } from '../lib/useLowPowerMode'
 
 const reveal = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } }
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: .09 } } }
+const faqs = [
+  ['Apa itu Cookie login?', 'Cookie login adalah data sesi untuk mengakses akun yang memang kamu miliki atau berhak kamu gunakan. Detail sensitif hanya tersedia melalui delivery privat setelah transaksi selesai.'],
+  ['Apakah pengiriman otomatis?', 'Ya. Setelah pembayaran diverifikasi, sistem memeriksa Cookie secara real-time lalu menampilkannya di halaman pembelianmu.'],
+  ['Apa arti 100% valid?', 'Setiap Cookie diperiksa sesaat sebelum delivery. Status valid mengacu pada hasil pemeriksaan sistem ketika Cookie dikirim.'],
+  ['Di mana Cookie diterima?', 'Cookie tersedia di dashboard pada transaksi yang sudah selesai. Informasi sensitif tidak pernah ditampilkan pada halaman produk publik.'],
+]
 export function LandingPage() {
   const [faq, setFaq] = useState<number | null>(0)
   const { products,loading:productsLoading,error:productsError,refreshProducts } = useProducts()
   const totalSold=products.reduce((sum,product)=>sum+product.sold,0)
   const totalStock=products.reduce((sum,product)=>sum+product.stock,0)
   const reduceMotion = useReducedMotion()
+  const lowPower=useLowPowerMode()
+  const animateDecorations=!reduceMotion&&!lowPower
   const { scrollYProgress } = useScroll()
-  const panelY = useTransform(scrollYProgress, [0, .3], [0, reduceMotion ? 0 : 55])
-  const faqs = [
-    ['Apa itu Cookie login?', 'Cookie login adalah data sesi untuk mengakses akun yang memang kamu miliki atau berhak kamu gunakan. Detail sensitif hanya tersedia melalui delivery privat setelah transaksi selesai.'],
-    ['Apakah pengiriman otomatis?', 'Ya. Setelah pembayaran diverifikasi, sistem memeriksa Cookie secara real-time lalu menampilkannya di halaman pembelianmu.'],
-    ['Apa arti 100% valid?', 'Setiap Cookie diperiksa sesaat sebelum delivery. Status valid mengacu pada hasil pemeriksaan sistem ketika Cookie dikirim.'],
-    ['Di mana Cookie diterima?', 'Cookie tersedia di dashboard pada transaksi yang sudah selesai. Informasi sensitif tidak pernah ditampilkan pada halaman produk publik.'],
-  ]
 
-  return <div className="landing game-landing">
+  return <div className={`landing game-landing ${lowPower?'performance-lite':''}`}>
     <motion.div className="scroll-progress" style={{ scaleX: scrollYProgress }} />
     <PublicHeader />
     <main>
       <section className="game-hero">
         <div className="game-grid-bg" />
-        <motion.div className="game-hero-orb game-hero-orb--a" animate={reduceMotion ? {} : { x:[0,35,-10,0], y:[0,-20,18,0] }} transition={{ duration:12, repeat:Infinity, ease:'easeInOut' }} />
-        <motion.div className="game-hero-orb game-hero-orb--b" animate={reduceMotion ? {} : { x:[0,-28,12,0], y:[0,24,-12,0] }} transition={{ duration:14, repeat:Infinity, ease:'easeInOut' }} />
+        <motion.div className="game-hero-orb game-hero-orb--a" animate={animateDecorations ? { x:[0,35,-10,0], y:[0,-20,18,0] } : {}} transition={{ duration:12, repeat:Infinity, ease:'easeInOut' }} />
+        <motion.div className="game-hero-orb game-hero-orb--b" animate={animateDecorations ? { x:[0,-28,12,0], y:[0,24,-12,0] } : {}} transition={{ duration:14, repeat:Infinity, ease:'easeInOut' }} />
         <div className="container game-hero__inner">
           <motion.div className="game-hero__copy" initial="hidden" animate="visible" variants={stagger}>
             <motion.div variants={reveal} className="game-pill"><span><Cookie /></span> COOKIE LOGIN / READY STOCK</motion.div>
@@ -40,7 +42,7 @@ export function LandingPage() {
             <motion.div variants={reveal} className="game-proof"><span><i><ShieldCheck /></i><b>100% valid</b><small>Dicek sebelum dikirim</small></span><span><i><Zap /></i><b>0.1s delivery</b><small>Pengiriman otomatis</small></span><span><i><ShoppingBag /></i><b>{totalSold.toLocaleString('id-ID')} terjual</b><small>Pembelian terverifikasi</small></span></motion.div>
           </motion.div>
 
-          <motion.div className="gate-wrap" style={{ y: panelY }} initial={{ opacity:0, scale:.94, rotate:2 }} animate={{ opacity:1, scale:1, rotate:0 }} transition={{ delay:.22, duration:.7 }}>
+          <motion.div className="gate-wrap" initial={{ opacity:0, scale:.94, rotate:2 }} animate={{ opacity:1, scale:1, rotate:0 }} transition={{ delay:.22, duration:.7 }}>
             <div className="gate-halo" />
             <div className="game-gate">
               <div className="game-gate__top"><span><i/><i/><i/></span><b>LANGGOR COOKIE SYSTEM</b><em>LIVE</em></div>
@@ -58,8 +60,8 @@ export function LandingPage() {
                 <p><ShieldCheck /> Pengiriman otomatis • valid saat dikirim</p>
               </div>
             </div>
-            <motion.div className="gate-float gate-float--top" animate={reduceMotion ? {} : { y:[0,-7,0] }} transition={{ duration:3,repeat:Infinity }}><Cookie/><span><b>{totalStock} stock available</b><small>Data katalog live</small></span></motion.div>
-            <motion.div className="gate-float gate-float--bottom" animate={reduceMotion ? {} : { y:[0,7,0] }} transition={{ duration:3.6,repeat:Infinity }}><Zap/><span><b>Pesanan terlindungi</b><small>Diperiksa sebelum dikirim</small></span></motion.div>
+            <motion.div className="gate-float gate-float--top" animate={animateDecorations ? { y:[0,-7,0] } : {}} transition={{ duration:3,repeat:Infinity }}><Cookie/><span><b>{totalStock} stock available</b><small>Data katalog live</small></span></motion.div>
+            <motion.div className="gate-float gate-float--bottom" animate={animateDecorations ? { y:[0,7,0] } : {}} transition={{ duration:3.6,repeat:Infinity }}><Zap/><span><b>Pesanan terlindungi</b><small>Diperiksa sebelum dikirim</small></span></motion.div>
           </motion.div>
         </div>
         <div className="live-rail"><div className="live-rail__track">{[...products,...products].map((product,index)=><span key={`${product.id}-${index}`}><i/> {product.name.toUpperCase()} • {product.stock} STOK • {product.sold.toLocaleString('id-ID')} TERJUAL</span>)}</div></div>
