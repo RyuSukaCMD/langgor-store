@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   banner_url text,
   banner_path text,
   accent varchar(7) NOT NULL DEFAULT '#8b5cf6',
+  accent_secondary varchar(7) NOT NULL DEFAULT '#22d3ee',
+  profile_effect text NOT NULL DEFAULT 'none' CHECK (profile_effect IN ('none','aurora','stardust','comet','ripple','pixels')),
+  profile_animation text NOT NULL DEFAULT 'fade' CHECK (profile_animation IN ('fade','rise','zoom','slide','flip')),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -55,6 +58,9 @@ CREATE INDEX IF NOT EXISTS products_catalog_idx ON public.products(status,create
 -- Safe upgrades for projects that ran an earlier schema revision.
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_path text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS banner_path text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS accent_secondary varchar(7) NOT NULL DEFAULT '#22d3ee';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_effect text NOT NULL DEFAULT 'none' CHECK (profile_effect IN ('none','aurora','stardust','comet','ripple','pixels'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_animation text NOT NULL DEFAULT 'fade' CHECK (profile_animation IN ('fade','rise','zoom','slide','flip'));
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url text;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_path text;
 

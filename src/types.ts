@@ -1,5 +1,7 @@
 export type ProductKind = 'cookie' | 'account'
 export type ProductStatus = 'ready' | 'limited' | 'sold'
+export type ProfileEffect = 'none' | 'aurora' | 'stardust' | 'comet' | 'ripple' | 'pixels'
+export type ProfileAnimation = 'fade' | 'rise' | 'zoom' | 'slide' | 'flip'
 
 export interface Product {
   id: string
@@ -31,6 +33,9 @@ export interface User {
   bio: string
   joinedAt: string
   accent: string
+  accentSecondary?: string
+  profileEffect?: ProfileEffect
+  profileAnimation?: ProfileAnimation
   avatarUrl?: string
   bannerUrl?: string
 }
